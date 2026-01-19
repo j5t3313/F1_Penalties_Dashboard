@@ -53,6 +53,10 @@ app.layout = html.Div([
     ),
     
     html.Div(id="page-content"),
+
+    html.Footer(
+    html.Small("Created by Jessica Steele", className="text-muted"),
+    className="text-center py-3 mt-4"
 ])
 
 
