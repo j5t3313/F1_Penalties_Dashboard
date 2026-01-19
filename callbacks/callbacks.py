@@ -129,7 +129,7 @@ def register_callbacks(app):
         total = len(filtered)
         drivers = filtered["Driver"].nunique()
         fines = filtered["Fine"].sum()
-        fines_str = f"${fines:,.0f}" if pd.notna(fines) and fines > 0 else "$0"
+        fines_str = f"€{fines:,.0f}" if pd.notna(fines) and fines > 0 else "€0"
         pp = filtered["Penalty Points"].sum()
         pp_str = str(int(pp)) if pd.notna(pp) else "0"
         
@@ -171,7 +171,7 @@ def register_callbacks(app):
     def update_driver_stats(driver, filters):
         if not driver:
             empty = empty_figure("Select a driver")
-            return "0", "0", "$0", "0s", empty, empty, empty, empty, empty, None
+            return "0", "0", "€0", "0s", empty, empty, empty, empty, empty, None
         
         df = load_data()
         filtered = filter_data(df, filters or {})
@@ -181,7 +181,7 @@ def register_callbacks(app):
         pp = driver_df["Penalty Points"].sum()
         pp_str = str(int(pp)) if pd.notna(pp) else "0"
         fines = driver_df["Fine"].sum()
-        fines_str = f"${fines:,.0f}" if pd.notna(fines) and fines > 0 else "$0"
+        fines_str = f"€{fines:,.0f}" if pd.notna(fines) and fines > 0 else "€0"
         time_pen = driver_df["Time Penalty (in seconds)"].sum()
         time_str = f"{int(time_pen)}s" if pd.notna(time_pen) else "0s"
         
@@ -224,7 +224,7 @@ def register_callbacks(app):
     def update_team_stats(team, filters):
         if not team:
             empty = empty_figure("Select a team")
-            return "0", "0", "$0", "0", empty, empty, empty, None
+            return "0", "0", "€0", "0", empty, empty, empty, None
         
         df = load_data()
         filtered = filter_data(df, filters or {})
@@ -234,7 +234,7 @@ def register_callbacks(app):
         pp = team_df["Penalty Points"].sum()
         pp_str = str(int(pp)) if pd.notna(pp) else "0"
         fines = team_df["Fine"].sum()
-        fines_str = f"${fines:,.0f}" if pd.notna(fines) and fines > 0 else "$0"
+        fines_str = f"€{fines:,.0f}" if pd.notna(fines) and fines > 0 else "€0"
         drivers = team_df["Driver"].nunique()
         
         allegation_counts = team_df["Allegation"].value_counts().head(10).reset_index()
@@ -289,7 +289,7 @@ def register_callbacks(app):
     def update_race_stats(race, year):
         if not race:
             empty = empty_figure("Select a race")
-            return "0", "0", "0", "$0", empty, empty, empty, None
+            return "0", "0", "0", "€0", empty, empty, empty, None
         
         df = load_data()
         
@@ -303,7 +303,7 @@ def register_callbacks(app):
         pp = race_df["Penalty Points"].sum()
         pp_str = str(int(pp)) if pd.notna(pp) else "0"
         fines = race_df["Fine"].sum()
-        fines_str = f"${fines:,.0f}" if pd.notna(fines) and fines > 0 else "$0"
+        fines_str = f"€{fines:,.0f}" if pd.notna(fines) and fines > 0 else "€0"
         
         if year:
             drivers_fig = race_summary(df, year, race)
@@ -471,7 +471,7 @@ def register_callbacks(app):
                 entity_col: item,
                 "Penalties": len(item_df),
                 "Penalty Points": int(item_df["Penalty Points"].sum()) if item_df["Penalty Points"].sum() > 0 else 0,
-                "Fines": f"${item_df['Fine'].sum():,.0f}" if item_df["Fine"].sum() > 0 else "$0",
+                "Fines": f"€{item_df['Fine'].sum():,.0f}" if item_df["Fine"].sum() > 0 else "€0",
                 "Time Penalties": f"{int(item_df['Time Penalty (in seconds)'].sum())}s" if item_df["Time Penalty (in seconds)"].sum() > 0 else "0s",
             })
         
