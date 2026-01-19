@@ -2,6 +2,8 @@
 
 A web-based dashboard for analyzing Formula 1 penalty data from 2020-2025. Built with Python Dash and designed for mobile-responsive viewing.
 
+https://f1penalties.up.railway.app/
+
 ## Overview
 
 This application provides interactive analysis of F1 penalty data across multiple dimensions including drivers, teams, races, and stewards. Data spans the 2020-2025 seasons and includes comprehensive standardization of driver names, team names, allegations, and outcomes.
@@ -140,11 +142,7 @@ The application is deployed on Railway with automatic deployments triggered by G
 
 ## License
 
-[Specify your license here]
-
-## Author
-
-Jessica - BI/Data Analyst specializing in healthcare analytics and Formula 1 data science
+MIT
 
 ## Acknowledgments
 
