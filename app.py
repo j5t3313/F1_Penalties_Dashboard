@@ -10,7 +10,7 @@ from callbacks.callbacks import register_callbacks
 
 app = Dash(
     __name__,
-    title="F1 Penalties"
+    title="F1 Penalties",
     external_stylesheets=[
         dbc.themes.FLATLY,
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css",
