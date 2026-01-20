@@ -73,7 +73,7 @@ STEWARD_NAME_MAP = {
     "Marc Boonman": "Marc Boonman",
     "Marc van Geel": "Marc van Geel",
     "Marcel Demers": "Marcel Demers",
-    "Matheiu Remmerie": "Matheiu Remmerie",
+    "Matheiu Remmerie": "Mathieu Remmerie",
     "Mathew Selley": "Mathew Selley",
     "Mathieu Remmerie": "Mathieu Remmerie",
     "Matt Selley": "Mathew Selley",
