@@ -8,7 +8,7 @@ def create_navbar():
             dbc.Row([
                 dbc.Col([
                     html.A(
-                        dbc.NavbarBrand("Formula 1 Penalty Data (2020 - 2025)", className="ms-2 fw-bold fs-4"),
+                        dbc.NavbarBrand("Formula 1 Penalty Data (2020 - Present)", className="ms-2 fw-bold fs-4"),
                         href="/",
                         style={"textDecoration": "none"}
                     )
@@ -24,6 +24,12 @@ def create_navbar():
                     dbc.NavItem(dbc.NavLink("Stewards", href="/stewards", className="fs-5 px-3 fw-semibold")),
                     dbc.NavItem(dbc.NavLink("Compare", href="/compare", className="fs-5 px-3 fw-semibold")),
                     dbc.NavItem(dbc.NavLink("Data", href="/data", className="fs-5 px-3 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink(
+                        [html.I(className="fas fa-mug-hot me-1"), "Buy Me A Coffee"],
+                        href="https://buymeacoffee.com/sraffxe9p9",
+                        target="_blank",
+                        className="fs-5 px-3 fw-semibold"
+                    )),
                 ], className="ms-auto", navbar=True),
                 id="navbar-collapse",
                 navbar=True,
