@@ -614,7 +614,7 @@ def create_driver_penalty_table(df):
         return html.P("No penalties found.", className="text-muted")
     
     cols = ["Year", "Round", "Race", "Session", "Allegation", "Allegation_Raw", 
-            "Outcome", "Time Penalty (in seconds)", "Fine", "Penalty Points", "Notes"]
+            "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points", "Notes"]
     display_cols = [c for c in cols if c in df.columns]
     display_df = df[display_cols].copy()
     display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
@@ -634,7 +634,7 @@ def create_team_penalty_table(df):
         return html.P("No penalties found.", className="text-muted")
     
     cols = ["Year", "Round", "Race", "Driver", "Session", "Allegation", 
-            "Outcome", "Time Penalty (in seconds)", "Fine", "Penalty Points"]
+            "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points"]
     display_cols = [c for c in cols if c in df.columns]
     display_df = df[display_cols].copy()
     display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
