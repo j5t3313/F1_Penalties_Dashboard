@@ -109,7 +109,7 @@ STEWARD_NAME_MAP = {
     "Wilhelm Singer": "Wilhelm Singer",
     "Yannick Dalmas": "Yannick Dalmas",
     "Yves Bacquelaine": "Yves Bacquelaine",
-    "Zheng Honghai": "Zheng Honghai",
+    "Zheng Honghai": "Zheng Honghai"
 }
 
 
