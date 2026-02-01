@@ -6,7 +6,7 @@ from functools import lru_cache
 DATA_PATH = Path(__file__).parent / "F1Penalties.xlsx"
 
 DRIVER_NAME_MAP = {
-    "Alexander Albon": "Alex Albon",
+    "Alex Albon": "Alexander Albon",
     "Carlos Sainz Jnr": "Carlos Sainz",
 }
 
