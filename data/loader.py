@@ -8,6 +8,7 @@ DATA_PATH = Path(__file__).parent / "F1Penalties.xlsx"
 DRIVER_NAME_MAP = {
     "Alex Albon": "Alexander Albon",
     "Carlos Sainz Jnr": "Carlos Sainz",
+    "Valterri Bottas": "Valtteri Bottas"
 }
 
 TEAM_NAME_MAP = {
