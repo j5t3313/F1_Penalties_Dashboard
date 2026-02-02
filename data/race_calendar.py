@@ -137,6 +137,7 @@ SESSION_DAY_OFFSET = {
 def normalize_race_name(race_name):
     if not race_name:
         return race_name
+    race_name = race_name.strip()
     return RACE_NAME_ALIASES.get(race_name, race_name)
 
 
