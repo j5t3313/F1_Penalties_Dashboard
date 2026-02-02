@@ -8,8 +8,11 @@ TEAM_COLORS = {
     "AlphaTauri": "#5E8FAA",
     "VCARB": "#6692FF",
     "RB": "#6692FF",
+    "Racing Bulls": "#6692FF",
     "Alfa Romeo": "#C92D4B",
     "Sauber": "#52E252",
+    "Audi": "#E5002E",
+    "Cadillac": "#CFB023",
     "Haas": "#B6BABD",
     "Williams": "#64C4FF",
     "Racing Point": "#F596C8",
@@ -32,7 +35,6 @@ def adjust_color_brightness(hex_color, factor):
     r = int(hex_color[0:2], 16)
     g = int(hex_color[2:4], 16)
     b = int(hex_color[4:6], 16)
-    
     if factor > 1:
         r = int(min(255, r + (255 - r) * (factor - 1)))
         g = int(min(255, g + (255 - g) * (factor - 1)))
@@ -41,13 +43,11 @@ def adjust_color_brightness(hex_color, factor):
         r = int(r * factor)
         g = int(g * factor)
         b = int(b * factor)
-    
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
 def get_driver_color(driver_name, team_name, driver_index=0):
     base_color = get_team_color(team_name)
-    
     if driver_index == 0:
         return base_color
     elif driver_index == 1:
@@ -63,19 +63,15 @@ def build_team_color_map(df):
 
 def build_driver_color_map(df):
     color_map = {}
-    
     driver_teams = df.groupby("Driver")["Team"].agg(lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else x.iloc[0])
-    
     team_drivers = {}
     for driver, team in driver_teams.items():
         if team not in team_drivers:
             team_drivers[team] = []
         team_drivers[team].append(driver)
-    
     for team, drivers in team_drivers.items():
         for i, driver in enumerate(sorted(drivers)):
             color_map[driver] = get_driver_color(driver, team, i % 3)
-    
     return color_map
 
 

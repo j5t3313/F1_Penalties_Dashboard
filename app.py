@@ -4,8 +4,9 @@ import dash_bootstrap_components as dbc
 from data.loader import load_data, get_unique_values, get_unique_stewards, get_unique_outcomes
 from components.navbar import create_navbar
 from components.filters import create_filter_button, create_filter_offcanvas, create_active_filters_display
-from layouts import overview, drivers, teams, races, stewards, compare, raw_data
+from layouts import overview, drivers, teams, races, stewards, compare, raw_data, current_season
 from callbacks.callbacks import register_callbacks
+from callbacks.current_season import register_current_season_callbacks
 
 
 app = Dash(
@@ -37,9 +38,9 @@ stewards_list = get_unique_stewards(df)
 app.layout = html.Div([
     dcc.Store(id="filter-store", data={}),
     dcc.Location(id="url", refresh=False),
-    
+
     create_navbar(),
-    
+
     dbc.Container([
         dbc.Row([
             dbc.Col([
@@ -48,11 +49,11 @@ app.layout = html.Div([
             ], xs=12, className="mt-3"),
         ]),
     ], fluid=True),
-    
+
     create_filter_offcanvas(
         years, races_list, sessions, drivers_list, teams_list, allegations, outcomes, stewards_list
     ),
-    
+
     html.Div(id="page-content"),
 
     html.Footer(
@@ -68,6 +69,8 @@ app.layout = html.Div([
 def display_page(pathname):
     if pathname == "/" or pathname == "/overview":
         return overview.create_layout()
+    elif pathname == "/current-season":
+        return current_season.create_layout()
     elif pathname == "/drivers":
         return drivers.create_layout(drivers_list)
     elif pathname == "/teams":
@@ -85,6 +88,7 @@ def display_page(pathname):
 
 
 register_callbacks(app)
+register_current_season_callbacks(app)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ def create_navbar():
             dbc.Collapse(
                 dbc.Nav([
                     dbc.NavItem(dbc.NavLink("Overview", href="/", className="fs-5 px-3 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Current Season", href="/current-season", className="fs-5 px-3 fw-semibold")),
                     dbc.NavItem(dbc.NavLink("Drivers", href="/drivers", className="fs-5 px-3 fw-semibold")),
                     dbc.NavItem(dbc.NavLink("Teams", href="/teams", className="fs-5 px-3 fw-semibold")),
                     dbc.NavItem(dbc.NavLink("Races", href="/races", className="fs-5 px-3 fw-semibold")),
