@@ -34,7 +34,7 @@ def create_layout():
                 html.P([
                     "This is a personal project by Jessica Steele. ",
                     "Find me on ",
-                    html.A("LinkedIn", href="https://www.linkedin.com/in/jessicamsteele/", target="_blank"),
+                    html.A("LinkedIn", href="https://www.linkedin.com/in/j5t33l3/", target="_blank"),
                     " for more F1 data analysis."
                 ]),
 
