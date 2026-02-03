@@ -494,8 +494,8 @@ def comparison_allegation(df, entity_col, entities):
         xaxis_title="",
         yaxis_title="Count",
         xaxis=dict(tickangle=45),
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
-        margin=dict(l=20, r=120, t=50, b=20),
+        legend=dict(orientation="v", yanchor="top", y=0.99, xanchor="right", x=0.99),
+        margin=dict(l=20, r=20, t=50, b=20),
     )
     return fig
 
