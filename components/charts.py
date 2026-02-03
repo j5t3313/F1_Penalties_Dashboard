@@ -493,15 +493,9 @@ def comparison_allegation(df, entity_col, entities):
         title="Allegations Comparison",
         xaxis_title="",
         yaxis_title="Count",
-        margin=dict(l=20, r=20, t=50, b=20),
+        margin=dict(l=20, r=20, t=50, b=80),
         xaxis=dict(tickangle=45),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
-            x=0.5,
-        ),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
     )
     return fig
 
@@ -536,14 +530,9 @@ def comparison_yearly_trend(df, entity_col, entities):
         xaxis_title="",
         yaxis_title="Penalties",
         template=CHART_TEMPLATE,
-        margin=dict(l=20, r=20, t=50, b=20),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
-            x=0.5,
-        ),
+        margin=dict(l=20, r=20, t=50, b=80),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
+        
     )
     fig.update_xaxes(dtick=1)
     return fig
@@ -668,8 +657,8 @@ def race_drivers_by_year(df, race_name):
         title=f"{race_name} - Top Penalized Drivers (by Year)",
         xaxis_title="Number of Penalties",
         yaxis_title="",
-        margin=dict(l=20, r=20, t=80, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        margin=dict(l=20, r=20, t=50, b=80),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
         barmode="stack",
     )
     return fig
