@@ -1,5 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc
+from data.race_calendar import get_current_season_year
 
 
 def create_stat_card(title, value_id):
@@ -12,10 +13,12 @@ def create_stat_card(title, value_id):
 
 
 def create_layout():
+    year = get_current_season_year()
     return dbc.Container([
         dbc.Row([
             dbc.Col([
-                html.H4("2026 Current Season", className="mb-4"),
+                html.H4(f"{year} Season", className="mb-2"),
+                html.Div(id="cs-next-race", className="text-muted mb-4"),
             ], xs=12),
         ]),
 

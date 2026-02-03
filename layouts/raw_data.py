@@ -7,15 +7,25 @@ def create_layout():
         dbc.Row([
             dbc.Col([
                 html.H4("Penalty Data", className="mb-4"),
-            ], xs=12),
+            ], xs=12, md=6),
+            dbc.Col([
+                dbc.Button(
+                    [html.I(className="fas fa-download me-2"), "Export CSV"],
+                    id="btn-export-csv",
+                    color="secondary",
+                    size="sm",
+                    className="float-md-end",
+                ),
+                dcc.Download(id="download-csv"),
+            ], xs=12, md=6, className="mb-3 mb-md-0"),
         ]),
-        
+
         dbc.Row([
             dbc.Col([
                 html.P(id="data-count", className="text-muted mb-3"),
             ], xs=12),
         ]),
-        
+
         dbc.Row([
             dbc.Col([
                 html.Div(id="data-table-container"),
@@ -28,12 +38,10 @@ def create_data_table(df):
     display_columns = [
         "Year", "Round", "Race", "Driver", "Team", "Session",
         "Allegation", "Allegation_Raw", "Incident involving", "Outcome",
-        "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points", 
+        "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points",
         "Notes", "Stewards"
     ]
-    
     columns = [col for col in display_columns if col in df.columns]
-    
     return dash_table.DataTable(
         id="data-table",
         columns=[{"name": col, "id": col} for col in columns],

@@ -1,4 +1,4 @@
-from dash import Input, Output, State, callback, ctx, html, no_update
+from dash import Input, Output, State, callback, ctx, html, no_update, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
@@ -498,6 +498,22 @@ def register_callbacks(app):
         table = create_data_table(filtered)
         
         return count_text, table
+
+    @callback(
+        Output("download-csv", "data"),
+        Input("btn-export-csv", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def export_csv(n_clicks):
+        df = load_data()
+        export_columns = [
+            "Year", "Round", "Race", "Driver", "Team", "Session",
+            "Allegation", "Allegation_Raw", "Incident involving", "Outcome",
+            "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points",
+            "Notes", "Stewards"
+        ]
+        columns = [col for col in export_columns if col in df.columns]
+        return dcc.send_data_frame(df[columns].to_csv, "f1_penalties.csv", index=False)
 
 
 def calculate_all_steward_stats(df):

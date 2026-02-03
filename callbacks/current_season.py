@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import date
 
 from data.loader import load_data
-from data.race_calendar import get_current_season_year
+from data.race_calendar import get_current_season_year, get_next_race
 from data.penalty_tracker import (
     calculate_active_penalty_points,
     get_expiring_soon,
@@ -226,7 +226,24 @@ def create_race_log_table(df, year=None):
     )
 
 
+def is_current_season_page(pathname):
+    return pathname in ["/", "/current-season"]
+
+
 def register_current_season_callbacks(app):
+
+    @app.callback(
+        Output("cs-next-race", "children"),
+        Input("url", "pathname"),
+    )
+    def update_next_race(pathname):
+        if not is_current_season_page(pathname):
+            return ""
+        next_race = get_next_race()
+        if next_race:
+            race_date = next_race["date"].strftime("%B %d")
+            return f"Next Race: {next_race['race']} - {race_date}"
+        return ""
 
     @app.callback(
         [
@@ -238,7 +255,7 @@ def register_current_season_callbacks(app):
         Input("url", "pathname"),
     )
     def update_stats(pathname):
-        if pathname != "/current-season":
+        if not is_current_season_page(pathname):
             return ["--"] * 4
         df = load_data()
         standings = calculate_active_penalty_points(df)
@@ -264,7 +281,7 @@ def register_current_season_callbacks(app):
         Input("url", "pathname"),
     )
     def update_active_pp_chart(pathname):
-        if pathname != "/current-season":
+        if not is_current_season_page(pathname):
             return empty_figure()
         df = load_data()
         return active_penalty_points_chart(df)
@@ -274,39 +291,47 @@ def register_current_season_callbacks(app):
         Input("url", "pathname"),
     )
     def update_expiring_table(pathname):
-        if pathname != "/current-season":
+        if not is_current_season_page(pathname):
             return html.Div()
         df = load_data()
         return create_expiring_table(df)
 
     @app.callback(
         Output("chart-cs-season-leaderboard", "figure"),
-        Input("filter-store", "data"),
+        Input("url", "pathname"),
     )
-    def update_season_leaderboard(filters):
+    def update_season_leaderboard(pathname):
+        if not is_current_season_page(pathname):
+            return empty_figure()
         df = load_data()
         return season_leaderboard_chart(df)
 
     @app.callback(
         Output("chart-cs-team-penalties", "figure"),
-        Input("filter-store", "data"),
+        Input("url", "pathname"),
     )
-    def update_team_penalties(filters):
+    def update_team_penalties(pathname):
+        if not is_current_season_page(pathname):
+            return empty_figure()
         df = load_data()
         return team_penalties_chart(df)
 
     @app.callback(
         Output("chart-cs-allegations", "figure"),
-        Input("filter-store", "data"),
+        Input("url", "pathname"),
     )
-    def update_allegations(filters):
+    def update_allegations(pathname):
+        if not is_current_season_page(pathname):
+            return empty_figure()
         df = load_data()
         return season_allegations_chart(df)
 
     @app.callback(
         Output("cs-race-log", "children"),
-        Input("filter-store", "data"),
+        Input("url", "pathname"),
     )
-    def update_race_log(filters):
+    def update_race_log(pathname):
+        if not is_current_season_page(pathname):
+            return html.Div()
         df = load_data()
         return create_race_log_table(df)

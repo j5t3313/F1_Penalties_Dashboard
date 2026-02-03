@@ -8,7 +8,7 @@ def create_navbar():
             dbc.Row([
                 dbc.Col([
                     html.A(
-                        dbc.NavbarBrand("Formula 1 Penalty Data (2020 - Present)", className="ms-2 fw-bold fs-4"),
+                        dbc.NavbarBrand("F1 Penalty Data", className="ms-2 fw-bold fs-5"),
                         href="/",
                         style={"textDecoration": "none"}
                     )
@@ -17,19 +17,20 @@ def create_navbar():
             dbc.NavbarToggler(id="navbar-toggler", n_clicks=0),
             dbc.Collapse(
                 dbc.Nav([
-                    dbc.NavItem(dbc.NavLink("Overview", href="/", className="fs-5 px-3 fw-semibold")),
-                    dbc.NavItem(dbc.NavLink("Current Season", href="/current-season", className="fs-5 px-3 fw-semibold")),
-                    dbc.NavItem(dbc.NavLink("Drivers", href="/drivers", className="fs-5 px-3 fw-semibold")),
-                    dbc.NavItem(dbc.NavLink("Teams", href="/teams", className="fs-5 px-3 fw-semibold")),
-                    dbc.NavItem(dbc.NavLink("Races", href="/races", className="fs-5 px-3 fw-semibold")),
-                    dbc.NavItem(dbc.NavLink("Stewards", href="/stewards", className="fs-5 px-3 fw-semibold")),
-                    dbc.NavItem(dbc.NavLink("Compare", href="/compare", className="fs-5 px-3 fw-semibold")),
-                    dbc.NavItem(dbc.NavLink("Data", href="/data", className="fs-5 px-3 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Current Season", href="/", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Overview", href="/overview", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Drivers", href="/drivers", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Teams", href="/teams", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Races", href="/races", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Compare", href="/compare", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Stewards", href="/stewards", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("Data", href="/data", className="px-2 fw-semibold")),
+                    dbc.NavItem(dbc.NavLink("About", href="/about", className="px-2 fw-semibold")),
                     dbc.NavItem(dbc.NavLink(
-                        [html.I(className="fas fa-mug-hot me-1"), "Buy Me A Coffee"],
+                        [html.I(className="fas fa-mug-hot me-1"), ""],
                         href="https://buymeacoffee.com/sraffxe9p9",
                         target="_blank",
-                        className="fs-5 px-3 fw-semibold"
+                        className="px-2 fw-semibold"
                     )),
                 ], className="ms-auto", navbar=True),
                 id="navbar-collapse",

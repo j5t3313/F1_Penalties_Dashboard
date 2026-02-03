@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from data.loader import load_data, get_unique_values, get_unique_stewards, get_unique_outcomes
 from components.navbar import create_navbar
 from components.filters import create_filter_button, create_filter_offcanvas, create_active_filters_display
-from layouts import overview, drivers, teams, races, stewards, compare, raw_data, current_season
+from layouts import overview, drivers, teams, races, stewards, compare, raw_data, current_season, about
 from callbacks.callbacks import register_callbacks
 from callbacks.current_season import register_current_season_callbacks
 
@@ -67,10 +67,10 @@ app.layout = html.Div([
     Input("url", "pathname"),
 )
 def display_page(pathname):
-    if pathname == "/" or pathname == "/overview":
-        return overview.create_layout()
-    elif pathname == "/current-season":
+    if pathname == "/" or pathname == "/current-season":
         return current_season.create_layout()
+    elif pathname == "/overview":
+        return overview.create_layout()
     elif pathname == "/drivers":
         return drivers.create_layout(drivers_list)
     elif pathname == "/teams":
@@ -83,8 +83,10 @@ def display_page(pathname):
         return compare.create_layout(drivers_list, teams_list)
     elif pathname == "/data":
         return raw_data.create_layout()
+    elif pathname == "/about":
+        return about.create_layout()
     else:
-        return overview.create_layout()
+        return current_season.create_layout()
 
 
 register_callbacks(app)
