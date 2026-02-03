@@ -20,7 +20,7 @@ def create_layout():
 
                 html.H5("Update Frequency", className="mt-4"),
                 html.P(
-                    "Data is updated manually after each race weekend, typically within 24-48 hours of the final session."
+                    "Data is updated after each race weekend, typically within 24-48 hours of the final session."
                 ),
 
                 html.H5("Methodology", className="mt-4"),
@@ -35,7 +35,15 @@ def create_layout():
                     "This is a personal project by Jessica Steele. ",
                     "Find me on ",
                     html.A("LinkedIn", href="https://www.linkedin.com/in/j5t33l3/", target="_blank"),
-                    " for more F1 data analysis."
+                    " or read my F1 analysis on ",
+                    html.A("Substack", href="https://substack.com/@formulasteele", target="_blank"),
+                    "."
+                ]),
+                html.H5("Bug Reports", className="mt-4"),
+                html.P([
+                    "Found an issue or have a feature request? ",
+                    html.A("Open an issue on GitHub", href="https://github.com/j5t3313/F1_Penalties_Dashboard/issues", target="_blank"),
+                    "."
                 ]),
 
                 html.Hr(className="my-4"),
