@@ -493,9 +493,9 @@ def comparison_allegation(df, entity_col, entities):
         title="Allegations Comparison",
         xaxis_title="",
         yaxis_title="Count",
-        margin=dict(l=20, r=20, t=50, b=80),
         xaxis=dict(tickangle=45),
-        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
+        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
+        margin=dict(l=20, r=120, t=50, b=20),
     )
     return fig
 
@@ -530,8 +530,8 @@ def comparison_yearly_trend(df, entity_col, entities):
         xaxis_title="",
         yaxis_title="Penalties",
         template=CHART_TEMPLATE,
-        margin=dict(l=20, r=20, t=50, b=80),
-        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
+        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
+        margin=dict(l=20, r=120, t=50, b=20),
         
     )
     fig.update_xaxes(dtick=1)
