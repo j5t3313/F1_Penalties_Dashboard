@@ -7,6 +7,8 @@ from components.filters import create_filter_button, create_filter_offcanvas, cr
 from layouts import overview, drivers, teams, races, stewards, compare, raw_data, current_season, about
 from callbacks.callbacks import register_callbacks
 from callbacks.current_season import register_current_season_callbacks
+from callbacks.outstanding import register_outstanding_callbacks
+from callbacks.panels import register_panel_callbacks
 
 
 app = Dash(
@@ -91,6 +93,8 @@ def display_page(pathname):
 
 register_callbacks(app)
 register_current_season_callbacks(app)
+register_outstanding_callbacks(app)
+register_panel_callbacks(app)
 
 
 if __name__ == "__main__":
