@@ -11,6 +11,20 @@ from components.colors import (
 
 CHART_TEMPLATE = "plotly_white"
 COLOR_SEQUENCE = px.colors.qualitative.Set2
+BORDER_STYLE = dict(showline=True, linewidth=1.5, linecolor="#333333", mirror=True)
+
+
+def _apply_border(fig, is_treemap=False):
+    if is_treemap:
+        fig.add_shape(
+            type="rect", xref="paper", yref="paper",
+            x0=0, y0=0, x1=1, y1=1,
+            line=dict(color="#333333", width=1.5),
+        )
+    else:
+        fig.update_xaxes(**BORDER_STYLE)
+        fig.update_yaxes(**BORDER_STYLE)
+    return fig
 
 
 def empty_figure(message="No data available"):
@@ -53,6 +67,7 @@ def penalties_by_year(df):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_xaxes(dtick=1)
+    _apply_border(fig)
     return fig
 
 
@@ -80,6 +95,7 @@ def top_drivers(df, n=10):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -106,6 +122,7 @@ def top_teams(df, n=10):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -128,6 +145,7 @@ def allegation_breakdown(df, n=10):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
+    _apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -161,6 +179,7 @@ def outcome_breakdown(df):
         margin=dict(l=20, r=20, t=50, b=20),
         height=max(400, len(outcome_df) * 25),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -189,6 +208,7 @@ def penalty_points_by_driver(df, n=10):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -214,10 +234,12 @@ def driver_timeline(df, driver_name):
         title=f"{driver_name} - Penalty Timeline",
         xaxis_title="",
         yaxis_title="",
-        margin=dict(l=20, r=20, t=50, b=20),
+        margin=dict(l=20, r=120, t=50, b=20),
         height=max(400, driver_df["Allegation"].nunique() * 30),
         xaxis=dict(tickangle=45),
+        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -241,6 +263,7 @@ def driver_allegation_breakdown(df, driver_name):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
+    _apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -272,6 +295,7 @@ def driver_cumulative_points(df, driver_name):
         margin=dict(l=20, r=20, t=50, b=20),
         xaxis=dict(tickangle=45),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -302,6 +326,7 @@ def team_drivers_breakdown(df, team_name):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -328,6 +353,7 @@ def team_yearly_trend(df, team_name):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_xaxes(dtick=1)
+    _apply_border(fig)
     return fig
 
 
@@ -353,6 +379,7 @@ def race_summary(df, year, race):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -382,6 +409,7 @@ def steward_penalties_issued(df, n=15):
         yaxis_title="",
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -424,6 +452,7 @@ def steward_avg_penalty_points(df, min_penalties=5):
         yaxis_title="",
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -463,6 +492,7 @@ def comparison_bar(df, entity_col, entities, metric="count"):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -494,9 +524,10 @@ def comparison_allegation(df, entity_col, entities):
         xaxis_title="",
         yaxis_title="Count",
         xaxis=dict(tickangle=45),
-        legend=dict(orientation="v", yanchor="top", y=0.99, xanchor="right", x=0.99),
-        margin=dict(l=20, r=20, t=50, b=20),
+        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
+        margin=dict(l=20, r=120, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -535,6 +566,7 @@ def comparison_yearly_trend(df, entity_col, entities):
         
     )
     fig.update_xaxes(dtick=1)
+    _apply_border(fig)
     return fig
 
 
@@ -573,6 +605,7 @@ def driver_incidents_with(df, driver_name, n=10):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -601,6 +634,7 @@ def driver_involved_in_others(df, driver_name):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -627,6 +661,7 @@ def race_penalties_by_year(df, race_name):
         margin=dict(l=20, r=20, t=50, b=20),
         showlegend=False,
     )
+    _apply_border(fig)
     return fig
 
 
@@ -661,6 +696,7 @@ def race_drivers_by_year(df, race_name):
         legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
         barmode="stack",
     )
+    _apply_border(fig)
     return fig
 
 
@@ -686,6 +722,7 @@ def race_allegations_by_year(df, race_name):
         title=f"{race_name} - Allegations Breakdown",
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -724,6 +761,7 @@ def steward_team_driver_breakdown(df, steward_name):
         legend=dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5),
         height=max(400, len(team_order) * 35),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -789,6 +827,7 @@ def steward_statistical_comparison(df, steward_name):
         margin=dict(l=20, r=20, t=50, b=20),
         height=max(400, len(stats_df) * 25),
     )
+    _apply_border(fig)
     return fig
 
 
@@ -831,4 +870,5 @@ def steward_team_bias_analysis(df, steward_name):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
+    _apply_border(fig)
     return fig

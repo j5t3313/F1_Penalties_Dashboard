@@ -1,5 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc
+from callbacks.panels import create_panel_lookup_section
 
 
 def create_layout(stewards):
@@ -37,6 +38,9 @@ def create_layout(stewards):
         ]),
         
         html.Div(id="steward-content"),
+
+        create_panel_lookup_section(stewards),
+
     ], fluid=True, className="py-3")
 
 
