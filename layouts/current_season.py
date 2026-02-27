@@ -1,6 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 from data.race_calendar import get_current_season_year
+from callbacks.outstanding import create_outstanding_section
 
 
 def create_stat_card(title, value_id):
@@ -84,4 +85,7 @@ def create_layout():
                 html.Div(id="cs-race-log"),
             ], xs=12, className="mb-4"),
         ]),
+
+        create_outstanding_section(),
+
     ], fluid=True, className="py-3")
