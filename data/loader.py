@@ -201,7 +201,7 @@ OUTCOME_CANONICAL = {
     "warning": "Warning",
 }
 
-SHEETS_TO_LOAD = ["2020", "2021", "2022", "2023", "2024", "2025"]
+SHEETS_TO_LOAD = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"]
 
 
 @lru_cache(maxsize=1)
