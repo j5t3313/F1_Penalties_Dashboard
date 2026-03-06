@@ -63,7 +63,7 @@ def build_team_color_map(df):
 
 def build_driver_color_map(df):
     color_map = {}
-    driver_teams = df.groupby("Driver")["Team"].agg(lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else x.iloc[0])
+    driver_teams = df.sort_values(["Year", "Round"]).groupby("Driver")["Team"].last()
     team_drivers = {}
     for driver, team in driver_teams.items():
         if team not in team_drivers:
