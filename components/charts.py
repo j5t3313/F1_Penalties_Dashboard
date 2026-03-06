@@ -183,7 +183,7 @@ def outcome_breakdown(df):
     return fig
 
 
-def penalty_points_by_driver(df, n=10):
+def penalty_points_by_driver(df, n=12):
     if df.empty:
         return empty_figure()
     
@@ -570,7 +570,7 @@ def comparison_yearly_trend(df, entity_col, entities):
     return fig
 
 
-def driver_incidents_with(df, driver_name, n=10):
+def driver_incidents_with(df, driver_name, n=15):
     driver_df = df[df["Driver"] == driver_name]
     if driver_df.empty:
         return empty_figure(f"No data for {driver_name}")
