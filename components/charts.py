@@ -61,9 +61,9 @@ def penalties_by_year(df):
         color_discrete_sequence=COLOR_SEQUENCE,
     )
     fig.update_layout(
-        title="Penalties by Year",
+        title="Allegations by Year",
         xaxis_title="",
-        yaxis_title="Number of Penalties",
+        yaxis_title="Number of Allegations",
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_xaxes(dtick=1)
@@ -89,8 +89,8 @@ def top_drivers(df, n=10):
         marker_color=colors,
     ))
     fig.update_layout(
-        title=f"Top {n} Most Penalized Drivers",
-        xaxis_title="Number of Penalties",
+        title=f"Top {n} Most Investigated Drivers",
+        xaxis_title="Number of Allegations",
         yaxis_title="",
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
@@ -116,8 +116,8 @@ def top_teams(df, n=10):
         marker_color=colors,
     ))
     fig.update_layout(
-        title=f"Top {n} Most Penalized Teams",
-        xaxis_title="Number of Penalties",
+        title=f"Top {n} Most Investigated Teams",
+        xaxis_title="Number of Allegations",
         yaxis_title="",
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
@@ -320,7 +320,7 @@ def team_drivers_breakdown(df, team_name):
         marker_color=colors,
     ))
     fig.update_layout(
-        title=f"{team_name} - Penalties by Driver",
+        title=f"{team_name} - Allegations by Driver",
         xaxis_title="",
         yaxis_title="Count",
         template=CHART_TEMPLATE,
@@ -346,7 +346,7 @@ def team_yearly_trend(df, team_name):
         marker=dict(color=team_color),
     ))
     fig.update_layout(
-        title=f"{team_name} - Penalties by Year",
+        title=f"{team_name} - Allegations by Year",
         xaxis_title="",
         yaxis_title="Count",
         template=CHART_TEMPLATE,
@@ -373,7 +373,7 @@ def race_summary(df, year, race):
         marker_color=colors,
     ))
     fig.update_layout(
-        title=f"{year} {race} - Penalties by Driver",
+        title=f"{year} {race} - Allegations by Driver",
         xaxis_title="",
         yaxis_title="Count",
         template=CHART_TEMPLATE,
@@ -464,7 +464,7 @@ def comparison_bar(df, entity_col, entities, metric="count"):
     
     if metric == "count":
         data = filtered.groupby(entity_col).size().reset_index(name="Value")
-        title = "Total Penalties Comparison"
+        title = "Total Allegations Comparison"
     elif metric == "penalty_points":
         data = filtered.groupby(entity_col)["Penalty Points"].sum().reset_index(name="Value")
         title = "Total Penalty Points Comparison"
@@ -559,7 +559,7 @@ def comparison_yearly_trend(df, entity_col, entities):
     fig.update_layout(
         title="Yearly Trend Comparison",
         xaxis_title="",
-        yaxis_title="Penalties",
+        yaxis_title="Allegations",
         template=CHART_TEMPLATE,
         legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
         margin=dict(l=20, r=120, t=50, b=20),
@@ -628,7 +628,7 @@ def driver_involved_in_others(df, driver_name):
         marker_color=colors,
     ))
     fig.update_layout(
-        title=f"Penalties Where {driver_name} Was Involved",
+        title=f"Incidents Where {driver_name} Was Involved",
         xaxis_title="Number of Incidents",
         yaxis_title="",
         template=CHART_TEMPLATE,
@@ -655,9 +655,9 @@ def race_penalties_by_year(df, race_name):
         color_discrete_sequence=COLOR_SEQUENCE,
     )
     fig.update_layout(
-        title=f"{race_name} - Penalties by Year",
+        title=f"{race_name} - Allegations by Year",
         xaxis_title="",
-        yaxis_title="Number of Penalties",
+        yaxis_title="Number of Allegations",
         margin=dict(l=20, r=20, t=50, b=20),
         showlegend=False,
     )
@@ -689,8 +689,8 @@ def race_drivers_by_year(df, race_name):
         category_orders={"Driver": driver_order},
     )
     fig.update_layout(
-        title=f"{race_name} - Top Penalized Drivers (by Year)",
-        xaxis_title="Number of Penalties",
+        title=f"{race_name} - Top Investigated Drivers (by Year)",
+        xaxis_title="Number of Allegations",
         yaxis_title="",
         margin=dict(l=20, r=20, t=50, b=80),
         legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
@@ -753,8 +753,8 @@ def steward_team_driver_breakdown(df, steward_name):
         category_orders={"Team": team_order},
     )
     fig.update_layout(
-        title=f"{steward_name} - Penalties by Team/Driver",
-        xaxis_title="Number of Penalties",
+        title=f"{steward_name} - Investigations by Team/Driver",
+        xaxis_title="Number of Investigations",
         yaxis_title="",
         margin=dict(l=20, r=20, t=50, b=20),
         barmode="stack",
