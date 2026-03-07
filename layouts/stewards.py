@@ -9,7 +9,7 @@ def create_layout(stewards):
             dbc.Col([
                 html.H4("Steward Analysis", className="mb-4"),
                 html.P(
-                    "Analysis of penalties by FIA steward panels (2020-2025).",
+                    "Analysis of investigations by FIA steward panels (2020-Present).",
                     className="text-muted mb-4"
                 ),
             ], xs=12),
@@ -60,7 +60,7 @@ def create_steward_content(steward_name):
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Total Penalties", className="text-muted"),
+                        html.H6("Total Investigations", className="text-muted"),
                         html.H3(id="steward-stat-total"),
                     ])
                 ])
