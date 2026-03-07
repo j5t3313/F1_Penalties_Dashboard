@@ -30,7 +30,7 @@ def create_driver_content(driver_name):
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Total Penalties", className="text-muted"),
+                        html.H6("Total Allegations", className="text-muted"),
                         html.H3(id="driver-stat-total"),
                     ])
                 ])
