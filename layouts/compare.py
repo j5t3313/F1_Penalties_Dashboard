@@ -50,7 +50,7 @@ def create_compare_content():
                 dcc.Dropdown(
                     id="compare-metric",
                     options=[
-                        {"label": "Total Penalties", "value": "count"},
+                        {"label": "Total Allegations", "value": "count"},
                         {"label": "Penalty Points", "value": "penalty_points"},
                         {"label": "Total Fines", "value": "fines"},
                     ],
