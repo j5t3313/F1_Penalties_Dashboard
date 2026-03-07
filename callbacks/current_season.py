@@ -86,7 +86,7 @@ def active_penalty_points_chart(df):
 def season_leaderboard_chart(df, year=None):
     leaderboard = get_season_leaderboard(df, year)
     if leaderboard.empty:
-        return empty_figure("No penalties issued this season")
+        return empty_figure("No allegations this season")
     leaderboard = leaderboard.sort_values("Total_Penalties", ascending=True).tail(15)
     colors = [get_team_color(t) for t in leaderboard["Team"]]
     fig = go.Figure(go.Bar(
@@ -96,8 +96,8 @@ def season_leaderboard_chart(df, year=None):
         marker_color=colors,
     ))
     fig.update_layout(
-        title="Season Penalty Leaderboard",
-        xaxis_title="Total Penalties",
+        title="Season Allegation Leaderboard",
+        xaxis_title="Total Allegations",
         yaxis_title="",
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
@@ -109,7 +109,7 @@ def season_leaderboard_chart(df, year=None):
 def team_penalties_chart(df, year=None):
     team_data = get_team_penalties(df, year)
     if team_data.empty:
-        return empty_figure("No penalties issued this season")
+        return empty_figure("No allegations this season")
     team_data = team_data.sort_values("Total_Penalties", ascending=True)
     colors = [get_team_color(t) for t in team_data["Team"]]
     fig = go.Figure(go.Bar(
@@ -119,8 +119,8 @@ def team_penalties_chart(df, year=None):
         marker_color=colors,
     ))
     fig.update_layout(
-        title="Penalties by Team",
-        xaxis_title="Total Penalties",
+        title="Allegations by Team",
+        xaxis_title="Total Allegations",
         yaxis_title="",
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
@@ -132,7 +132,7 @@ def team_penalties_chart(df, year=None):
 def season_allegations_chart(df, year=None):
     season_df = get_current_season_penalties(df, year)
     if season_df.empty:
-        return empty_figure("No penalties issued this season")
+        return empty_figure("No allegations this season")
     allegation_counts = season_df["Allegation"].value_counts().head(10).reset_index()
     allegation_counts.columns = ["Allegation", "Count"]
     fig = px.treemap(
@@ -143,7 +143,7 @@ def season_allegations_chart(df, year=None):
         color_discrete_sequence=COLOR_SEQUENCE,
     )
     fig.update_layout(
-        title="Penalty Type Distribution",
+        title="Allegation Type Distribution",
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
@@ -208,7 +208,7 @@ def create_expiring_table(df):
 def create_race_log_table(df, year=None):
     season_df = get_current_season_penalties(df, year)
     if season_df.empty:
-        return html.P("No penalties issued this season.", className="text-muted")
+        return html.P("No allegations this season.", className="text-muted")
     display_columns = [
         "Round", "Race", "Session", "Driver", "Team",
         "Allegation", "Outcome", "Penalty Points", "Fine", "Notes",
