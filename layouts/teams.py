@@ -30,7 +30,7 @@ def create_team_content(team_name):
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Total Penalties", className="text-muted"),
+                        html.H6("Total Allegations", className="text-muted"),
                         html.H3(id="team-stat-total"),
                     ])
                 ])
@@ -54,7 +54,7 @@ def create_team_content(team_name):
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Drivers Penalized", className="text-muted"),
+                        html.H6("Drivers Investigated", className="text-muted"),
                         html.H3(id="team-stat-drivers"),
                     ])
                 ])
