@@ -95,7 +95,7 @@ def create_panel_content():
             dbc.Col(
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Total Penalties", className="text-muted"),
+                        html.H6("Total Investigations", className="text-muted"),
                         html.H3(id="panel-stat-total"),
                     ])
                 ]),
@@ -226,7 +226,7 @@ def panel_allegations_chart(matches_df):
         color_discrete_sequence=COLOR_SEQUENCE,
     )
     fig.update_layout(
-        title="Panel Allegations",
+        title="Panel Investigations",
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
