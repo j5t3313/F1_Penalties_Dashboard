@@ -60,7 +60,7 @@ def create_layout():
 
         dbc.Row([
             dbc.Col([
-                html.H5("Season Penalties", className="mt-2 mb-3"),
+                html.H5("Season Allegations", className="mt-2 mb-3"),
             ], xs=12),
         ]),
 
