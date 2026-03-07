@@ -40,7 +40,7 @@ def create_race_content(race, year=None):
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Total Penalties", className="text-muted"),
+                        html.H6("Total Allegations", className="text-muted"),
                         html.H3(id="race-stat-total"),
                     ])
                 ])
@@ -48,7 +48,7 @@ def create_race_content(race, year=None):
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Drivers Penalized", className="text-muted"),
+                        html.H6("Drivers Investigated", className="text-muted"),
                         html.H3(id="race-stat-drivers"),
                     ])
                 ])
