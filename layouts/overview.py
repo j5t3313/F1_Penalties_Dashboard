@@ -14,7 +14,7 @@ def create_stat_card(title, value_id):
 def create_layout():
     return dbc.Container([
         dbc.Row([
-            dbc.Col(create_stat_card("Total Records", "stat-total"), xs=6, md=3, className="mb-3"),
+            dbc.Col(create_stat_card("Total Allegations", "stat-total"), xs=6, md=3, className="mb-3"),
             dbc.Col(create_stat_card("Drivers", "stat-drivers"), xs=6, md=3, className="mb-3"),
             dbc.Col(create_stat_card("Total Fines", "stat-fines"), xs=6, md=3, className="mb-3"),
             dbc.Col(create_stat_card("Penalty Points", "stat-pp"), xs=6, md=3, className="mb-3"),
