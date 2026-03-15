@@ -58,8 +58,8 @@ RACE_CALENDAR = {
         "Australia": date(2026, 3, 8),
         "China": date(2026, 3, 15),
         "Japan": date(2026, 3, 29),
-        "Bahrain": date(2026, 4, 12),
-        "Saudi Arabia": date(2026, 4, 19),
+        #"Bahrain": date(2026, 4, 12), CANCELED
+        #"Saudi Arabia": date(2026, 4, 19), CANCELED
         "Miami": date(2026, 5, 3),
         "Canada": date(2026, 5, 24),
         "Monaco": date(2026, 6, 7),
