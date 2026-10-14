@@ -7,6 +7,7 @@ from components.colors import (
     get_color_sequence_for_teams, get_color_sequence_for_drivers,
     adjust_color_brightness, TEAM_COLORS, DEFAULT_COLOR
 )
+from data.steward_stats import MIN_STEWARD_RECORDS, expected_team_counts
 
 
 CHART_TEMPLATE = "plotly_white"
@@ -218,26 +219,34 @@ def driver_timeline(df, driver_name):
         return empty_figure(f"No data for {driver_name}")
     
     driver_df = driver_df.sort_values(["Year", "Round"])
-    driver_df["Race_Label"] = driver_df["Year"].astype(str) + " R" + driver_df["Round"].astype(str)
+    driver_df["Season_Pos"] = (driver_df["Year"] + (driver_df["Round"] - 1) / 25).astype(float)
     driver_df["Team_Color"] = driver_df["Team"].apply(get_team_color)
-    
+
     fig = px.scatter(
         driver_df,
-        x="Race_Label",
+        x="Season_Pos",
         y="Allegation",
         color="Team",
         color_discrete_map={team: get_team_color(team) for team in driver_df["Team"].unique()},
         template=CHART_TEMPLATE,
-        hover_data=["Race", "Session", "Penalty Points", "Team"],
+        hover_data={
+            "Season_Pos": False,
+            "Race": True,
+            "Year": True,
+            "Round": True,
+            "Session": True,
+            "Penalty Points": True,
+            "Team": True,
+        },
     )
     fig.update_layout(
         title=f"{driver_name} - Penalty Timeline",
         xaxis_title="",
         yaxis_title="",
-        margin=dict(l=20, r=120, t=50, b=20),
+        margin=dict(l=20, r=20, t=50, b=80),
         height=max(400, driver_df["Allegation"].nunique() * 30),
-        xaxis=dict(tickangle=45),
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
+        xaxis=dict(dtick=1, tickformat="d"),
+        legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
     )
     _apply_border(fig)
     return fig
@@ -275,17 +284,25 @@ def driver_cumulative_points(df, driver_name):
     driver_df = driver_df.sort_values(["Year", "Round"])
     driver_df["Penalty Points"] = driver_df["Penalty Points"].fillna(0)
     driver_df["Cumulative_PP"] = driver_df["Penalty Points"].cumsum()
-    driver_df["Race_Label"] = driver_df["Year"].astype(str) + " R" + driver_df["Round"].astype(str)
-    
+    driver_df["Season_Pos"] = (driver_df["Year"] + (driver_df["Round"] - 1) / 25).astype(float)
+
     most_recent_team = driver_df["Team"].iloc[-1]
     line_color = get_team_color(most_recent_team)
-    
+
     fig = go.Figure(go.Scatter(
-        x=driver_df["Race_Label"],
+        x=driver_df["Season_Pos"],
         y=driver_df["Cumulative_PP"],
         mode="lines+markers",
         line=dict(color=line_color),
         marker=dict(color=line_color),
+        customdata=driver_df[["Race", "Year", "Round", "Session"]].astype(object).values,
+        hovertemplate=(
+            "Race: %{customdata[0]}<br>"
+            "Year: %{customdata[1]}<br>"
+            "Round: %{customdata[2]}<br>"
+            "Session: %{customdata[3]}<br>"
+            "Cumulative Points: %{y}<extra></extra>"
+        ),
     ))
     fig.update_layout(
         title=f"{driver_name} - Cumulative Penalty Points",
@@ -293,7 +310,7 @@ def driver_cumulative_points(df, driver_name):
         yaxis_title="Cumulative Points",
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
-        xaxis=dict(tickangle=45),
+        xaxis=dict(dtick=1, tickformat="d"),
     )
     _apply_border(fig)
     return fig
@@ -413,7 +430,7 @@ def steward_penalties_issued(df, n=15):
     return fig
 
 
-def steward_avg_penalty_points(df, min_penalties=5):
+def steward_avg_penalty_points(df, min_penalties=MIN_STEWARD_RECORDS):
     if df.empty or df["Stewards_List"].apply(len).sum() == 0:
         return empty_figure("No steward data available")
     
@@ -503,7 +520,10 @@ def comparison_allegation(df, entity_col, entities):
     filtered = df[df[entity_col].isin(entities)]
     
     allegation_data = filtered.groupby([entity_col, "Allegation"]).size().reset_index(name="Count")
-    
+    allegation_order = allegation_data.groupby("Allegation")["Count"].sum().sort_values(ascending=False).index.tolist()
+    n_allegations = len(allegation_order)
+    n_entities = allegation_data[entity_col].nunique()
+
     if entity_col == "Team":
         color_map = {e: get_team_color(e) for e in entities}
     else:
@@ -512,20 +532,22 @@ def comparison_allegation(df, entity_col, entities):
     
     fig = px.bar(
         allegation_data,
-        x="Allegation",
-        y="Count",
+        x="Count",
+        y="Allegation",
+        orientation="h",
         color=entity_col,
         barmode="group",
         template=CHART_TEMPLATE,
         color_discrete_map=color_map,
+        category_orders={"Allegation": allegation_order},
     )
     fig.update_layout(
         title="Allegations Comparison",
-        xaxis_title="",
-        yaxis_title="Count",
-        xaxis=dict(tickangle=45),
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
-        margin=dict(l=20, r=120, t=50, b=20),
+        xaxis_title="Count",
+        yaxis_title="",
+        legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
+        margin=dict(l=20, r=20, t=50, b=80),
+        height=max(400, n_allegations * (10 * n_entities + 12)),
     )
     _apply_border(fig)
     return fig
@@ -561,9 +583,9 @@ def comparison_yearly_trend(df, entity_col, entities):
         xaxis_title="",
         yaxis_title="Allegations",
         template=CHART_TEMPLATE,
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
-        margin=dict(l=20, r=120, t=50, b=20),
-        
+        legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
+        margin=dict(l=20, r=20, t=50, b=80),
+
     )
     fig.update_xaxes(dtick=1)
     _apply_border(fig)
@@ -575,7 +597,7 @@ def driver_incidents_with(df, driver_name, n=15):
     if driver_df.empty:
         return empty_figure(f"No data for {driver_name}")
     
-    incidents = driver_df["Incident involving"].dropna()
+    incidents = driver_df["Incident_List"].explode().dropna()
     if incidents.empty:
         return empty_figure("No incident data available")
     
@@ -610,7 +632,7 @@ def driver_incidents_with(df, driver_name, n=15):
 
 
 def driver_involved_in_others(df, driver_name):
-    involved_df = df[df["Incident involving"] == driver_name]
+    involved_df = df[df["Incident_List"].apply(lambda x: driver_name in x)]
     if involved_df.empty:
         return empty_figure(f"No incidents involving {driver_name}")
     
@@ -777,7 +799,7 @@ def steward_statistical_comparison(df, steward_name):
     
     for s in all_stewards:
         s_df = df[df["Stewards_List"].apply(lambda x: s in x)]
-        if len(s_df) >= 10:
+        if len(s_df) >= MIN_STEWARD_RECORDS:
             pp_sum = s_df["Penalty Points"].sum()
             avg_pp = pp_sum / len(s_df) if len(s_df) > 0 else 0
             all_steward_stats.append({
@@ -836,20 +858,18 @@ def steward_team_bias_analysis(df, steward_name):
     if steward_df.empty:
         return empty_figure(f"No data for {steward_name}")
     
-    overall_team_dist = df["Team"].value_counts(normalize=True)
-    steward_team_dist = steward_df["Team"].value_counts(normalize=True)
-    
+    expected = expected_team_counts(df, steward_df)
+    if expected.empty:
+        return empty_figure(f"Not enough data for {steward_name}")
+    observed = steward_df["Team"].value_counts().reindex(expected.index, fill_value=0)
+
     comparison = pd.DataFrame({
-        "Team": overall_team_dist.index,
-        "Overall": overall_team_dist.values,
+        "Team": expected.index,
+        "Expected": expected.values,
+        "Observed": observed.values,
     })
-    comparison = comparison.merge(
-        pd.DataFrame({"Team": steward_team_dist.index, "Steward": steward_team_dist.values}),
-        on="Team",
-        how="left"
-    ).fillna(0)
-    
-    comparison["Difference"] = ((comparison["Steward"] - comparison["Overall"]) / comparison["Overall"] * 100).round(1)
+
+    comparison["Difference"] = ((comparison["Observed"] - comparison["Expected"]) / comparison["Expected"] * 100).round(1)
     comparison = comparison.sort_values("Difference", ascending=True)
     
     colors = [get_team_color(t) for t in comparison["Team"]]
@@ -864,7 +884,7 @@ def steward_team_bias_analysis(df, steward_name):
     fig.add_vline(x=0, line_color="black", line_width=1)
     
     fig.update_layout(
-        title=f"{steward_name} - Team Penalty Distribution vs Average (%)",
+        title=f"{steward_name} - Team Distribution vs Season-Adjusted Expectation (%)",
         xaxis_title="% Difference from Expected",
         yaxis_title="",
         template=CHART_TEMPLATE,

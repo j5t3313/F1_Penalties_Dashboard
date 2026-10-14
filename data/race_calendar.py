@@ -70,7 +70,7 @@ RACE_CALENDAR = {
         "Hungary": date(2026, 7, 26),
         "Netherlands": date(2026, 8, 23),
         "Italy": date(2026, 9, 6),
-        "Madrid": date(2026, 9, 14),
+        "Madrid": date(2026, 9, 13),
         "Azerbaijan": date(2026, 9, 26),
         "Singapore": date(2026, 10, 11),
         "United States": date(2026, 10, 25),

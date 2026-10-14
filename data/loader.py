@@ -8,8 +8,14 @@ DATA_PATH = Path(__file__).parent / "F1Penalties.xlsx"
 DRIVER_NAME_MAP = {
     "Alex Albon": "Alexander Albon",
     "Carlos Sainz Jnr": "Carlos Sainz",
-    "Valterri Bottas": "Valtteri Bottas"
+    "Valterri Bottas": "Valtteri Bottas",
+    "Estebon Ocon": "Esteban Ocon",
+    "Kimi Raikkonnen": "Kimi Raikkonen",
+    "Nikita Mazapin": "Nikita Mazepin",
+    "Nyck De Vries": "Nyck de Vries",
 }
+
+INVALID_SESSIONS = ["na", "NA", "N/A", "n/a", ""]
 
 TEAM_NAME_MAP = {
     "Red Bull Racing": "Red Bull",
@@ -75,9 +81,10 @@ STEWARD_NAME_MAP = {
     "Marc van Geel": "Marc van Geel",
     "Marcel Demers": "Marcel Demers",
     "Matheiu Remmerie": "Mathieu Remmerie",
-    "Mathew Selley": "Mathew Selley",
+    "Mathew Selley": "Matthew Selley",
     "Mathieu Remmerie": "Mathieu Remmerie",
-    "Matt Selley": "Mathew Selley",
+    "Mathieu Rommerie": "Mathieu Remmerie",
+    "Matt Selley": "Matthew Selley",
     "Matteo Perini": "Matteo Perini",
     "Matthew Selley": "Matthew Selley",
     "Mazen Al Hilli": "Mazen Al Hilli",
@@ -192,11 +199,17 @@ OUTCOME_CANONICAL = {
     "license suspension": "License Suspension",
     "no further action": "No Further Action",
     "no penalty applied": "No Further Action",
+    "overturned": "Overturned",
+    "overturned on review": "Overturned",
+    "penalty lap": "Penalty Lap",
+    "penalty point": "Penalty Points",
     "penalty points": "Penalty Points",
     "q2 laptimes deleted": "Lap Time Deleted",
     "reprimand": "Reprimand",
     "start from back of grid": "Grid Penalty",
     "start from pit lane": "Grid Penalty",
+    "stop-and-go": "10 Second Stop and Go",
+    "stop and go": "10 Second Stop and Go",
     "time penalty": "Time Penalty",
     "warning": "Warning",
 }
@@ -236,7 +249,9 @@ def clean_data(df):
     
     df["Driver"] = df["Driver"].replace(DRIVER_NAME_MAP)
     df["Team"] = df["Team"].replace(TEAM_NAME_MAP)
-    df["Incident involving"] = df["Incident involving"].replace(DRIVER_NAME_MAP)
+    df["Session"] = df["Session"].where(~df["Session"].isin(INVALID_SESSIONS))
+    df["Incident_List"] = df["Incident involving"].apply(parse_incident_drivers)
+    df["Incident involving"] = df["Incident_List"].apply(lambda x: ", ".join(x) if x else None)
     
     df["Allegation"] = df["Allegation"].apply(standardize_allegation)
     df["Outcome"] = df["Outcome"].apply(standardize_outcome_string)
@@ -292,6 +307,13 @@ def parse_stewards(stewards_str):
         return []
     stewards = [s.strip() for s in str(stewards_str).split(",")]
     return [STEWARD_NAME_MAP.get(s, s) for s in stewards]
+
+
+def parse_incident_drivers(incident_str):
+    if pd.isna(incident_str):
+        return []
+    names = [n.strip() for n in str(incident_str).split(",")]
+    return [DRIVER_NAME_MAP.get(n, n) for n in names if n]
 
 
 def parse_outcomes(outcome_str):

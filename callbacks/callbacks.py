@@ -2,9 +2,11 @@ from dash import Input, Output, State, callback, ctx, html, no_update, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
-from scipy import stats
+import json
+from functools import lru_cache
 
 from data.loader import load_data, filter_data, get_unique_values, get_unique_stewards
+from data.steward_stats import MIN_STEWARD_RECORDS, team_distribution_tests
 from components.filters import format_active_filters
 from components.charts import (
     penalties_by_year, top_drivers, top_teams, allegation_breakdown,
@@ -400,7 +402,8 @@ def register_callbacks(app):
             margin=dict(l=20, r=20, t=50, b=20),
         )
         
-        stats_summary = create_steward_stats_summary(steward, steward_df, filtered)
+        team_tests = cached_team_distribution_tests(json.dumps(filters or {}, sort_keys=True))
+        stats_summary = create_steward_stats_summary(steward, steward_df, filtered, team_tests)
         table = create_steward_penalty_table(steward_df)
         
         return (
@@ -516,15 +519,22 @@ def register_callbacks(app):
         return dcc.send_data_frame(df[columns].to_csv, "f1_penalties.csv", index=False)
 
 
+@lru_cache(maxsize=32)
+def cached_team_distribution_tests(filters_key):
+    df = load_data()
+    filtered = filter_data(df, json.loads(filters_key))
+    return team_distribution_tests(filtered)
+
+
 def calculate_all_steward_stats(df):
     all_stewards = set()
     for sl in df["Stewards_List"]:
         all_stewards.update(sl)
-    
+
     stats_list = []
     for s in all_stewards:
         s_df = df[df["Stewards_List"].apply(lambda x: s in x)]
-        if len(s_df) >= 10:
+        if len(s_df) >= MIN_STEWARD_RECORDS:
             pp_sum = s_df["Penalty Points"].sum()
             avg_pp = pp_sum / len(s_df) if len(s_df) > 0 else 0
             stats_list.append({
@@ -537,7 +547,7 @@ def calculate_all_steward_stats(df):
     return pd.DataFrame(stats_list) if stats_list else pd.DataFrame()
 
 
-def create_steward_stats_summary(steward_name, steward_df, all_df):
+def create_steward_stats_summary(steward_name, steward_df, all_df, team_tests):
     if steward_df.empty:
         return html.P("No data available.", className="text-muted")
     
@@ -554,31 +564,18 @@ def create_steward_stats_summary(steward_name, steward_df, all_df):
     overall_std = all_stats["Avg_PP"].std()
     z_score = (steward_avg_pp - overall_avg) / overall_std if overall_std > 0 else 0
     
-    overall_team_dist = all_df["Team"].value_counts(normalize=True)
-    steward_team_dist = steward_df["Team"].value_counts(normalize=True)
-    
-    chi2_data = []
-    for team in overall_team_dist.index:
-        expected = overall_team_dist.get(team, 0) * len(steward_df)
-        observed = steward_team_dist.get(team, 0) * len(steward_df)
-        if expected > 0:
-            chi2_data.append((observed, expected))
-    
-    p_value = 1.0
-    if len(chi2_data) >= 2:
-        observed_vals = [x[0] for x in chi2_data]
-        expected_vals = [x[1] for x in chi2_data]
-        try:
-            chi2, p_value = stats.chisquare(observed_vals, expected_vals)
-            chi2_str = f"{chi2:.2f}"
-            p_str = f"{p_value:.4f}"
-        except:
-            chi2_str = "N/A"
-            p_str = "N/A"
+    team_test = team_tests.get(steward_name)
+    if team_test is not None:
+        q_value = team_test["q_value"]
+        team_test_str = (
+            f"Chi-square: {team_test['statistic']:.2f}, "
+            f"Monte Carlo p: {team_test['p_value']:.4f}, "
+            f"FDR-adjusted q: {q_value:.4f} (across {len(team_tests)} stewards)"
+        )
     else:
-        chi2_str = "N/A"
-        p_str = "N/A"
-    
+        q_value = 1.0
+        team_test_str = "Chi-square: N/A"
+
     severity_label = "Average"
     severity_color = "secondary"
     if z_score > 1.5:
@@ -594,14 +591,14 @@ def create_steward_stats_summary(steward_name, steward_df, all_df):
         severity_label = "Slightly Lenient"
         severity_color = "info"
     
-    bias_label = "Normal Distribution"
+    bias_label = "Within Expected Range"
     bias_color = "secondary"
-    if p_value < 0.05:
-        bias_label = "Unusual Team Distribution"
-        bias_color = "warning"
-    if p_value < 0.01:
+    if q_value < 0.01:
         bias_label = "Significantly Unusual"
         bias_color = "danger"
+    elif q_value < 0.05:
+        bias_label = "Unusual Team Distribution"
+        bias_color = "warning"
     
     return dbc.Card([
         dbc.CardHeader("Statistical Summary"),
@@ -612,7 +609,7 @@ def create_steward_stats_summary(steward_name, steward_df, all_df):
             
             html.H6("Team Distribution Analysis"),
             dbc.Badge(bias_label, color=bias_color, className="mb-2 me-2"),
-            html.P(f"Chi-square: {chi2_str}, p-value: {p_str}", className="small text-muted mb-3"),
+            html.P(team_test_str, className="small text-muted mb-3"),
             
             html.H6("Interpretation"),
             html.P(
