@@ -1,6 +1,8 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc, dash_table
 
+from data.loader import doc_markdown_link
+
 
 def create_layout():
     return dbc.Container([
@@ -42,10 +44,14 @@ def create_data_table(df):
         "Notes", "Stewards"
     ]
     columns = [col for col in display_columns if col in df.columns]
+    table_df = df[columns].copy()
+    table_df["Doc_Link"] = df["Doc_URL"].apply(doc_markdown_link)
     return dash_table.DataTable(
         id="data-table",
-        columns=[{"name": col, "id": col} for col in columns],
-        data=df[columns].to_dict("records"),
+        columns=[{"name": col, "id": col} for col in columns]
+        + [{"name": "Doc", "id": "Doc_Link", "presentation": "markdown"}],
+        data=table_df.to_dict("records"),
+        markdown_options={"link_target": "_blank"},
         page_size=25,
         page_action="native",
         sort_action="native",

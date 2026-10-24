@@ -513,7 +513,7 @@ def register_callbacks(app):
             "Year", "Round", "Race", "Driver", "Team", "Session",
             "Allegation", "Allegation_Raw", "Incident involving", "Outcome",
             "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points",
-            "Notes", "Stewards"
+            "Notes", "Stewards", "Doc_URL"
         ]
         columns = [col for col in export_columns if col in df.columns]
         return dcc.send_data_frame(df[columns].to_csv, "f1_penalties.csv", index=False)
@@ -622,14 +622,21 @@ def create_steward_stats_summary(steward_name, steward_df, all_df, team_tests):
     ])
 
 
+def doc_anchor(url):
+    if pd.isna(url) or not url:
+        return ""
+    return html.A("PDF", href=url, target="_blank", rel="noopener")
+
+
 def create_driver_penalty_table(df):
     if df.empty:
         return html.P("No penalties found.", className="text-muted")
-    
-    cols = ["Year", "Round", "Race", "Session", "Allegation", "Allegation_Raw", 
+
+    cols = ["Year", "Round", "Race", "Session", "Allegation", "Allegation_Raw",
             "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points", "Notes"]
     display_cols = [c for c in cols if c in df.columns]
     display_df = df[display_cols].copy()
+    display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
     display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
     
     return dbc.Table.from_dataframe(
@@ -650,6 +657,7 @@ def create_team_penalty_table(df):
             "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points"]
     display_cols = [c for c in cols if c in df.columns]
     display_df = df[display_cols].copy()
+    display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
     display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
     
     return dbc.Table.from_dataframe(
@@ -671,6 +679,7 @@ def create_race_penalty_table(df):
             "Grid Penalty", "Penalty Points", "Notes", "Stewards"]
     display_cols = [c for c in cols if c in df.columns]
     display_df = df[display_cols].copy()
+    display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
     display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
     
     return dbc.Table.from_dataframe(
@@ -692,6 +701,7 @@ def create_steward_penalty_table(df):
             "Penalty Points", "Notes"]
     display_cols = [c for c in cols if c in df.columns]
     display_df = df[display_cols].copy()
+    display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
     display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
     
     return dbc.Table.from_dataframe(

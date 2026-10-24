@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from functools import lru_cache
+from urllib.parse import quote
 
 
 DATA_PATH = Path(__file__).parent / "F1Penalties.xlsx"
@@ -235,10 +236,15 @@ def load_data():
 def clean_data(df):
     df = df.copy()
     
-    for col in ["Driver", "Team", "Race", "Session", "Allegation", "Outcome", "Incident involving"]:
+    if "Doc_URL" not in df.columns:
+        df["Doc_URL"] = None
+
+    for col in ["Driver", "Team", "Race", "Session", "Allegation", "Outcome", "Incident involving", "Doc_URL"]:
         if col in df.columns:
             df[col] = df[col].apply(lambda x: str(x).strip() if pd.notna(x) else x)
-    
+
+    df["Doc_URL"] = df["Doc_URL"].where(df["Doc_URL"] != "")
+
     df["Year"] = pd.to_numeric(df["Year"], errors="coerce").astype("Int64")
     df["Round"] = pd.to_numeric(df["Round"], errors="coerce").astype("Int64")
     df["Penalty Points"] = pd.to_numeric(df["Penalty Points"], errors="coerce").astype("Int64")
@@ -321,6 +327,12 @@ def parse_outcomes(outcome_str):
         return []
     parts = [o.strip() for o in str(outcome_str).split(",")]
     return [OUTCOME_CANONICAL.get(p.lower(), p) for p in parts]
+
+
+def doc_markdown_link(url):
+    if pd.isna(url) or not url:
+        return ""
+    return "[PDF](" + quote(url, safe=":/?&=#%~+,;@!$'*") + ")"
 
 
 def get_exploded_outcomes(df):

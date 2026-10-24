@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 from datetime import date
 
-from data.loader import load_data
+from data.loader import load_data, doc_markdown_link
 from data.race_calendar import get_current_season_year, get_next_race
 from data.penalty_tracker import (
     calculate_active_penalty_points,
@@ -215,9 +215,13 @@ def create_race_log_table(df, year=None):
     ]
     columns = [col for col in display_columns if col in season_df.columns]
     season_df = season_df.sort_values(["Round", "Session"], ascending=[False, True])
+    table_df = season_df[columns].copy()
+    table_df["Doc_Link"] = season_df["Doc_URL"].apply(doc_markdown_link)
     return dash_table.DataTable(
-        columns=[{"name": col, "id": col} for col in columns],
-        data=season_df[columns].to_dict("records"),
+        columns=[{"name": col, "id": col} for col in columns]
+        + [{"name": "Doc", "id": "Doc_Link", "presentation": "markdown"}],
+        data=table_df.to_dict("records"),
+        markdown_options={"link_target": "_blank"},
         page_size=25,
         page_action="native",
         sort_action="native",
