@@ -72,6 +72,7 @@ RACE_CALENDAR = {
         "Italy": date(2026, 9, 6),
         "Madrid": date(2026, 9, 13),
         "Azerbaijan": date(2026, 9, 26),
+        "Malaysia*": date(2026, 10, 4),
         "Singapore": date(2026, 10, 11),
         "United States": date(2026, 10, 25),
         "Mexico": date(2026, 11, 1),
