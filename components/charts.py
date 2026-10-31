@@ -7,7 +7,6 @@ from components.colors import (
     get_color_sequence_for_teams, get_color_sequence_for_drivers,
     adjust_color_brightness, TEAM_COLORS, DEFAULT_COLOR
 )
-from data.steward_stats import MIN_STEWARD_RECORDS, expected_team_counts
 from components.theme import CHART_TEMPLATE, COLOR_SEQUENCE, apply_border, empty_figure
 
 
@@ -363,74 +362,104 @@ def race_summary(df, year, race):
     return fig
 
 
-def steward_penalties_issued(df, n=15):
-    if df.empty or df["Stewards_List"].apply(len).sum() == 0:
+def steward_events_worked(df, n=15):
+    rows = []
+    for steward in sorted({s for sl in df["Stewards_List"] for s in sl}):
+        steward_df = df[df["Stewards_List"].apply(lambda x: steward in x)]
+        events = steward_df.groupby(["Year", "Race"]).ngroups
+        rows.append({
+            "Steward": steward,
+            "Events": events,
+            "Investigations": len(steward_df),
+            "Per_Event": len(steward_df) / events,
+        })
+    if not rows:
         return empty_figure("No steward data available")
-    
-    steward_counts = {}
-    for stewards in df["Stewards_List"]:
-        for steward in stewards:
-            steward_counts[steward] = steward_counts.get(steward, 0) + 1
-    
-    steward_df = pd.DataFrame(list(steward_counts.items()), columns=["Steward", "Count"])
-    steward_df = steward_df.sort_values("Count", ascending=True).tail(n)
-    
-    fig = px.bar(
-        steward_df,
-        x="Count",
-        y="Steward",
+
+    steward_df = pd.DataFrame(rows).sort_values(["Events", "Investigations"]).tail(n)
+
+    fig = go.Figure(go.Bar(
+        x=steward_df["Events"],
+        y=steward_df["Steward"],
         orientation="h",
-        template=CHART_TEMPLATE,
-        color_discrete_sequence=COLOR_SEQUENCE,
-    )
+        marker_color=COLOR_SEQUENCE[0],
+        customdata=steward_df[["Investigations", "Per_Event"]].values,
+        hovertemplate=(
+            "%{y}<br>Events worked: %{x}<br>"
+            "Investigations: %{customdata[0]}<br>"
+            "Investigations per event: %{customdata[1]:.1f}<extra></extra>"
+        ),
+    ))
     fig.update_layout(
-        title=f"Top {n} Stewards by Penalties Issued",
-        xaxis_title="Penalties Issued",
+        title=f"Events Worked (Top {n} Stewards)",
+        xaxis_title="Events Worked",
         yaxis_title="",
+        template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
     apply_border(fig)
     return fig
 
 
-def steward_avg_penalty_points(df, min_penalties=MIN_STEWARD_RECORDS):
-    if df.empty or df["Stewards_List"].apply(len).sum() == 0:
-        return empty_figure("No steward data available")
-    
-    steward_stats = {}
-    for _, row in df.iterrows():
-        pp = row["Penalty Points"] if pd.notna(row["Penalty Points"]) else 0
-        for steward in row["Stewards_List"]:
-            if steward not in steward_stats:
-                steward_stats[steward] = {"total_pp": 0, "count": 0}
-            steward_stats[steward]["total_pp"] += pp
-            steward_stats[steward]["count"] += 1
-    
-    steward_df = pd.DataFrame([
-        {"Steward": k, "Avg PP": v["total_pp"] / v["count"], "Count": v["count"]}
-        for k, v in steward_stats.items()
-        if v["count"] >= min_penalties
-    ])
-    
-    if steward_df.empty:
-        return empty_figure("Not enough data")
-    
-    steward_df = steward_df.sort_values("Avg PP", ascending=True)
-    
-    fig = px.bar(
-        steward_df,
-        x="Avg PP",
-        y="Steward",
-        orientation="h",
-        template=CHART_TEMPLATE,
-        color_discrete_sequence=[COLOR_SEQUENCE[1]],
-        hover_data=["Count"],
-    )
+SEVERITY_COLORS = {
+    "Harsher than expected": "#E8002D",
+    "More lenient than expected": "#1F77B4",
+    "Within expected range": "#9AA5B1",
+}
+
+
+def steward_severity_chart(severity, highlight=None):
+    if severity.empty:
+        return empty_figure("Not enough data: stewards need at least 5 events")
+
+    fig = go.Figure()
+    for label, color in SEVERITY_COLORS.items():
+        group = severity[severity["Label"] == label]
+        if group.empty:
+            continue
+        fig.add_trace(go.Scatter(
+            x=group["Estimate"],
+            y=group["Steward"],
+            mode="markers",
+            name=label,
+            marker=dict(color=color, size=8),
+            error_x=dict(
+                type="data",
+                symmetric=False,
+                array=group["High"] - group["Estimate"],
+                arrayminus=group["Estimate"] - group["Low"],
+                color=color,
+                thickness=1.5,
+            ),
+            customdata=group[["Low", "High", "Events", "Decisions", "q_value"]].values,
+            hovertemplate=(
+                "%{y}<br>%{x:+.2f} points vs expected per decision<br>"
+                "95% interval: %{customdata[0]:+.2f} to %{customdata[1]:+.2f}<br>"
+                "%{customdata[2]} events, %{customdata[3]} decisions<br>"
+                "q = %{customdata[4]:.3f}<extra></extra>"
+            ),
+        ))
+    if highlight is not None and highlight in set(severity["Steward"]):
+        row = severity[severity["Steward"] == highlight]
+        fig.add_trace(go.Scatter(
+            x=row["Estimate"],
+            y=row["Steward"],
+            mode="markers",
+            name=highlight,
+            marker=dict(color="#111111", size=13, symbol="diamond"),
+            hoverinfo="skip",
+        ))
+
+    fig.add_vline(x=0, line_dash="dash", line_color="black", annotation_text="Typical")
     fig.update_layout(
-        title=f"Average Penalty Points per Incident (min {min_penalties} penalties)",
-        xaxis_title="Avg Penalty Points",
+        title="Penalty Points vs Expected per Decision (95% interval)",
+        xaxis_title="Points vs expected for the same offence and season",
         yaxis_title="",
+        template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
+        height=max(400, len(severity) * 22),
+        yaxis=dict(categoryorder="array", categoryarray=list(severity["Steward"])),
+        legend=dict(orientation="h", yanchor="top", y=-0.08, xanchor="center", x=0.5),
     )
     apply_border(fig)
     return fig
@@ -738,7 +767,7 @@ def steward_team_driver_breakdown(df, steward_name):
         category_orders={"Team": team_order},
     )
     fig.update_layout(
-        title=f"{steward_name} - Investigations by Team/Driver",
+        title=f"{steward_name} - Investigations at Events Worked",
         xaxis_title="Number of Investigations",
         yaxis_title="",
         margin=dict(l=20, r=20, t=50, b=20),
@@ -750,108 +779,37 @@ def steward_team_driver_breakdown(df, steward_name):
     return fig
 
 
-def steward_statistical_comparison(df, steward_name):
-    steward_df = df[df["Stewards_List"].apply(lambda x: steward_name in x)]
-    if steward_df.empty:
-        return empty_figure(f"No data for {steward_name}")
-    
-    all_steward_stats = []
-    all_stewards = set()
-    for sl in df["Stewards_List"]:
-        all_stewards.update(sl)
-    
-    for s in all_stewards:
-        s_df = df[df["Stewards_List"].apply(lambda x: s in x)]
-        if len(s_df) >= MIN_STEWARD_RECORDS:
-            pp_sum = s_df["Penalty Points"].sum()
-            avg_pp = pp_sum / len(s_df) if len(s_df) > 0 else 0
-            all_steward_stats.append({
-                "Steward": s,
-                "Count": len(s_df),
-                "Avg_PP": avg_pp,
-                "Total_PP": pp_sum,
-            })
-    
-    if not all_steward_stats:
-        return empty_figure("Not enough data")
-    
-    stats_df = pd.DataFrame(all_steward_stats)
-    avg_pp_mean = stats_df["Avg_PP"].mean()
-    avg_pp_std = stats_df["Avg_PP"].std()
-    
-    steward_row = stats_df[stats_df["Steward"] == steward_name]
-    if steward_row.empty:
-        return empty_figure(f"Not enough data for {steward_name}")
-    
-    steward_avg_pp = steward_row["Avg_PP"].values[0]
-    z_score = (steward_avg_pp - avg_pp_mean) / avg_pp_std if avg_pp_std > 0 else 0
-    
-    stats_df["Highlight"] = stats_df["Steward"].apply(lambda x: "Selected" if x == steward_name else "Other")
-    stats_df = stats_df.sort_values("Avg_PP", ascending=True)
-    
-    colors = ["#E8002D" if h == "Selected" else "#cccccc" for h in stats_df["Highlight"]]
-    
+def steward_team_chart(team_df, steward_name, steward_estimate=None):
+    if team_df.empty:
+        return empty_figure(f"No discretionary decisions for {steward_name}")
+
+    colors = [get_team_color(t) for t in team_df["Team"]]
+
     fig = go.Figure(go.Bar(
-        x=stats_df["Avg_PP"],
-        y=stats_df["Steward"],
+        x=team_df["Estimate"],
+        y=team_df["Team"],
         orientation="h",
         marker_color=colors,
+        text=[f"n={n}" for n in team_df["Decisions"]],
+        textposition="outside",
+        customdata=team_df[["Decisions"]].values,
+        hovertemplate="%{y}<br>%{x:+.2f} points vs expected<br>%{customdata[0]} decisions<extra></extra>",
     ))
-    
-    fig.add_vline(x=avg_pp_mean, line_dash="dash", line_color="black", annotation_text="Average")
-    
-    if avg_pp_std > 0:
-        fig.add_vrect(x0=avg_pp_mean - avg_pp_std, x1=avg_pp_mean + avg_pp_std, 
-                      fillcolor="gray", opacity=0.1, line_width=0)
-    
-    fig.update_layout(
-        title=f"Avg Penalty Points per Incident (z-score: {z_score:.2f})",
-        xaxis_title="Avg Penalty Points",
-        yaxis_title="",
-        template=CHART_TEMPLATE,
-        margin=dict(l=20, r=20, t=50, b=20),
-        height=max(400, len(stats_df) * 25),
-    )
-    apply_border(fig)
-    return fig
 
-
-def steward_team_bias_analysis(df, steward_name):
-    steward_df = df[df["Stewards_List"].apply(lambda x: steward_name in x)]
-    if steward_df.empty:
-        return empty_figure(f"No data for {steward_name}")
-    
-    expected = expected_team_counts(df, steward_df)
-    if expected.empty:
-        return empty_figure(f"Not enough data for {steward_name}")
-    observed = steward_df["Team"].value_counts().reindex(expected.index, fill_value=0)
-
-    comparison = pd.DataFrame({
-        "Team": expected.index,
-        "Expected": expected.values,
-        "Observed": observed.values,
-    })
-
-    comparison["Difference"] = ((comparison["Observed"] - comparison["Expected"]) / comparison["Expected"] * 100).round(1)
-    comparison = comparison.sort_values("Difference", ascending=True)
-    
-    colors = [get_team_color(t) for t in comparison["Team"]]
-    
-    fig = go.Figure(go.Bar(
-        x=comparison["Difference"],
-        y=comparison["Team"],
-        orientation="h",
-        marker_color=colors,
-    ))
-    
     fig.add_vline(x=0, line_color="black", line_width=1)
-    
+    if steward_estimate is not None:
+        fig.add_vline(
+            x=steward_estimate, line_dash="dash", line_color="#E8002D",
+            annotation_text="Overall", annotation_position="top",
+        )
+
     fig.update_layout(
-        title=f"{steward_name} - Teams vs Expected (%)",
-        xaxis_title="% Difference from Expected",
+        title=f"{steward_name} - Points vs Expected by Team",
+        xaxis_title="Points vs expected per decision",
         yaxis_title="",
         template=CHART_TEMPLATE,
-        margin=dict(l=20, r=20, t=50, b=20),
+        margin=dict(l=20, r=40, t=50, b=20),
+        height=max(400, len(team_df) * 30),
     )
     apply_border(fig)
     return fig

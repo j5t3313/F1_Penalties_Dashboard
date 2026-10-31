@@ -1,6 +1,8 @@
 import pandas as pd
 from itertools import combinations
 
+from data.steward_stats import discretionary, event_totals, events_estimate
+
 
 def find_panel_matches(df, selected_stewards, min_overlap=2):
     if len(selected_stewards) < 2:
@@ -35,7 +37,7 @@ def get_co_occurrence_matrix(df, selected_stewards):
             continue
         races = co_df.groupby(["Year", "Race"]).size().reset_index()
         pp_sum = co_df["Penalty Points"].sum()
-        avg_pp = pp_sum / len(co_df) if len(co_df) > 0 else 0
+        judged = discretionary(co_df)
         results.append({
             "Steward_1": s1,
             "Steward_2": s2,
@@ -43,7 +45,7 @@ def get_co_occurrence_matrix(df, selected_stewards):
             "Races_Together": len(races),
             "Total_Penalties": len(co_df),
             "Total_PP": int(pp_sum) if pd.notna(pp_sum) else 0,
-            "Avg_PP": round(avg_pp, 2),
+            "Pts_vs_Expected": round(judged["Residual"].mean(), 2) if not judged.empty else None,
         })
     if not results:
         return pd.DataFrame()
@@ -57,36 +59,29 @@ def get_panel_aggregate_stats(matches_df):
     total = len(matches_df)
     fines = matches_df["Fine"].sum()
     races = matches_df.groupby(["Year", "Race"]).size().reset_index()
+    judged = discretionary(matches_df)
     return {
         "total_penalties": total,
         "total_pp": int(pp_sum) if pd.notna(pp_sum) else 0,
-        "avg_pp": round(pp_sum / total, 2) if total > 0 else 0,
+        "pts_vs_expected": judged["Residual"].mean() if not judged.empty else None,
         "total_fines": fines if pd.notna(fines) else 0,
         "races_served": len(races),
     }
 
 
-def get_panel_vs_individual_comparison(df, selected_stewards):
-    individual_stats = []
+def get_panel_vs_individual_comparison(scored, selected_stewards):
+    judged = discretionary(scored)
+    totals = event_totals(judged)
+    rows = []
     for steward in sorted(selected_stewards):
-        s_df = df[df["Stewards_List"].apply(lambda x: steward in x)]
-        if s_df.empty:
-            continue
-        pp_sum = s_df["Penalty Points"].sum()
-        total = len(s_df)
-        individual_stats.append({
-            "Steward": steward,
-            "Total_Penalties": total,
-            "Total_PP": int(pp_sum) if pd.notna(pp_sum) else 0,
-            "Avg_PP": round(pp_sum / total, 2) if total > 0 else 0,
-        })
+        events = judged.loc[judged["Stewards_List"].apply(lambda x: steward in x), "Event"].unique()
+        if len(events) > 0:
+            rows.append({"Name": steward, **events_estimate(totals, events)})
 
-    matches = find_panel_matches(df, selected_stewards, min_overlap=2)
-    panel_stats = get_panel_aggregate_stats(matches)
-
-    if not individual_stats:
-        return pd.DataFrame(), {}
-    return pd.DataFrame(individual_stats), panel_stats
+    together = find_panel_matches(judged, selected_stewards, min_overlap=2)
+    if not together.empty:
+        rows.append({"Name": "Together", **events_estimate(totals, together["Event"].unique())})
+    return pd.DataFrame(rows)
 
 
 def get_panel_allegation_breakdown(matches_df, n=10):

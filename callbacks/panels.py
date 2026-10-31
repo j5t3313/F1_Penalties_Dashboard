@@ -5,7 +5,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 
-from data.loader import load_data, filter_data, get_unique_stewards, sort_by_weekend
+from data.loader import get_unique_stewards, sort_by_weekend
+from data.steward_stats import cached_steward_analysis
 from data.panels import (
     find_panel_matches,
     get_exact_matches,
@@ -80,7 +81,7 @@ def create_panel_content():
             dbc.Col(
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Avg PP / Incident", className="text-muted"),
+                        html.H6("Pts vs Expected", className="text-muted"),
                         html.H3(id="panel-stat-avg-pp"),
                     ])
                 ]),
@@ -148,33 +149,39 @@ def panel_co_occurrence_chart(co_matrix):
     return fig
 
 
-def panel_comparison_chart(individual_df, panel_stats):
-    if individual_df.empty:
-        return empty_figure("No data for comparison")
+def panel_comparison_chart(comparison_df):
+    if comparison_df.empty:
+        return empty_figure("No discretionary decisions for comparison")
 
-    stewards = individual_df["Steward"].tolist()
-    avg_pps = individual_df["Avg_PP"].tolist()
+    colors = [COLOR_SEQUENCE[0] if name == "Together" else COLOR_SEQUENCE[1] for name in comparison_df["Name"]]
 
-    colors = [COLOR_SEQUENCE[1]] * len(stewards)
-
-    if panel_stats and panel_stats.get("total_penalties", 0) > 0:
-        stewards.append("Combined Panel")
-        avg_pps.append(panel_stats["avg_pp"])
-        colors.append(COLOR_SEQUENCE[0])
-
-    fig = go.Figure(go.Bar(
-        x=stewards,
-        y=avg_pps,
-        marker_color=colors,
-        text=[f"{v:.2f}" for v in avg_pps],
-        textposition="outside",
+    fig = go.Figure(go.Scatter(
+        x=comparison_df["Name"],
+        y=comparison_df["Estimate"],
+        mode="markers",
+        marker=dict(color=colors, size=11),
+        error_y=dict(
+            type="data",
+            symmetric=False,
+            array=comparison_df["High"] - comparison_df["Estimate"],
+            arrayminus=comparison_df["Estimate"] - comparison_df["Low"],
+            color="#555555",
+            thickness=1.5,
+        ),
+        customdata=comparison_df[["Low", "High", "Events", "Decisions"]].values,
+        hovertemplate=(
+            "%{x}<br>%{y:+.2f} points vs expected per decision<br>"
+            "95% interval: %{customdata[0]:+.2f} to %{customdata[1]:+.2f}<br>"
+            "%{customdata[2]} events, %{customdata[3]} decisions<extra></extra>"
+        ),
     ))
+    fig.add_hline(y=0, line_dash="dash", line_color="black")
     fig.update_layout(
-        title="Avg Penalty Points: Individual vs Panel",
+        title="Points vs Expected (95% interval)<br><sup>Individual figures include the events worked together</sup>",
         xaxis_title="",
-        yaxis_title="Avg PP per Incident",
+        yaxis_title="Points vs expected per decision",
         template=CHART_TEMPLATE,
-        margin=dict(l=20, r=20, t=50, b=20),
+        margin=dict(l=20, r=20, t=70, b=20),
     )
     apply_border(fig)
     return fig
@@ -236,12 +243,12 @@ def create_pairs_table(co_matrix):
         {"name": "Races Together", "id": "Races_Together"},
         {"name": "Total Penalties", "id": "Total_Penalties"},
         {"name": "Total PP", "id": "Total_PP"},
-        {"name": "Avg PP", "id": "Avg_PP"},
+        {"name": "Pts vs Expected", "id": "Pts_vs_Expected"},
     ]
 
     return dash_table.DataTable(
         columns=columns,
-        data=co_matrix[["Pair", "Races_Together", "Total_Penalties", "Total_PP", "Avg_PP"]].to_dict("records"),
+        data=co_matrix[["Pair", "Races_Together", "Total_Penalties", "Total_PP", "Pts_vs_Expected"]].to_dict("records"),
         sort_action="native",
         style_table={"overflowX": "auto"},
         style_cell={
@@ -325,18 +332,18 @@ def register_panel_callbacks(app):
             e = empty_figure("Select at least 2 stewards")
             return "0", "0", "0", "0.00", e, e, e, e, None, None
 
-        df = load_data()
-        filtered = filter_data(df, filters or {})
+        scored, _, _ = cached_steward_analysis(filters)
 
-        matches = find_panel_matches(filtered, selected, min_overlap=2)
+        matches = find_panel_matches(scored, selected, min_overlap=2)
         stats = get_panel_aggregate_stats(matches)
-        co_matrix = get_co_occurrence_matrix(filtered, selected)
-        individual_df, panel_stats = get_panel_vs_individual_comparison(filtered, selected)
+        co_matrix = get_co_occurrence_matrix(scored, selected)
+        comparison_df = get_panel_vs_individual_comparison(scored, selected)
 
         races_str = str(stats.get("races_served", 0))
         total_str = str(stats.get("total_penalties", 0))
         pp_str = str(stats.get("total_pp", 0))
-        avg_pp_str = f"{stats.get('avg_pp', 0):.2f}"
+        pts_vs_expected = stats.get("pts_vs_expected")
+        avg_pp_str = f"{pts_vs_expected:+.2f}" if pts_vs_expected is not None else "-"
 
         return (
             races_str,
@@ -344,7 +351,7 @@ def register_panel_callbacks(app):
             pp_str,
             avg_pp_str,
             panel_co_occurrence_chart(co_matrix),
-            panel_comparison_chart(individual_df, panel_stats),
+            panel_comparison_chart(comparison_df),
             panel_allegations_chart(matches),
             panel_outcomes_chart(matches),
             create_pairs_table(co_matrix),

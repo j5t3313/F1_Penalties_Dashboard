@@ -2,23 +2,23 @@ from dash import Input, Output, State, callback, ctx, html, no_update, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
-import json
-from functools import lru_cache
 
 from data.loader import load_data, filter_data, get_unique_values, get_unique_stewards, sort_by_weekend
-from data.steward_stats import MIN_STEWARD_RECORDS, team_distribution_tests
+from data.steward_stats import (
+    MIN_STEWARD_EVENTS, FALSE_DISCOVERY_RATE, cached_steward_analysis, discretionary,
+    event_totals, events_estimate, steward_records, team_breakdown,
+)
 from components.filters import format_active_filters
 from components.charts import (
     penalties_by_year, top_drivers, top_teams, allegation_breakdown,
     outcome_breakdown, penalty_points_by_driver, driver_timeline,
     driver_allegation_breakdown, driver_cumulative_points,
     team_drivers_breakdown, team_yearly_trend, race_summary,
-    steward_penalties_issued, steward_avg_penalty_points,
+    steward_events_worked, steward_severity_chart,
     comparison_bar, comparison_allegation, comparison_yearly_trend,
     empty_figure, driver_incidents_with, driver_involved_in_others,
     race_penalties_by_year, race_drivers_by_year, race_allegations_by_year,
-    steward_team_driver_breakdown, steward_statistical_comparison,
-    steward_team_bias_analysis,
+    steward_team_driver_breakdown, steward_team_chart,
 )
 from components.colors import get_team_color
 from components.theme import CHART_TEMPLATE
@@ -369,12 +369,11 @@ def register_callbacks(app):
         Input("filter-store", "data"),
     )
     def update_steward_overview(filters):
-        df = load_data()
-        filtered = filter_data(df, filters or {})
-        
+        scored, severity, _ = cached_steward_analysis(filters)
+
         return (
-            steward_penalties_issued(filtered),
-            steward_avg_penalty_points(filtered),
+            steward_events_worked(scored),
+            steward_severity_chart(severity),
         )
     
     @callback(
@@ -403,25 +402,21 @@ def register_callbacks(app):
     def update_steward_stats(steward, filters):
         if not steward:
             empty = empty_figure()
-            return "0", "0", "0.00", "-", empty, empty, empty, empty, None, None
-        
-        df = load_data()
-        filtered = filter_data(df, filters or {})
-        
-        steward_df = filtered[filtered["Stewards_List"].apply(lambda x: steward in x)]
-        
-        races = steward_df.groupby(["Year", "Race"]).size().reset_index()
-        panels = len(races)
-        total = len(steward_df)
-        
-        pp_sum = steward_df["Penalty Points"].sum()
-        avg_pp = pp_sum / total if total > 0 else 0
-        
-        all_steward_stats = calculate_all_steward_stats(filtered)
-        overall_avg = all_steward_stats["Avg_PP"].mean() if len(all_steward_stats) > 0 else 0
-        diff_pct = ((avg_pp - overall_avg) / overall_avg * 100) if overall_avg > 0 else 0
-        diff_str = f"{diff_pct:+.1f}%"
-        
+            return "0", "0", "-", "-", empty, empty, empty, empty, None, None
+
+        scored, severity, team_tests = cached_steward_analysis(filters)
+        steward_df = steward_records(scored, steward)
+        events = steward_df.groupby(["Year", "Race"]).ngroups
+        estimate, rated = steward_estimate(scored, severity, steward)
+
+        if estimate is None:
+            estimate_str, interval_str = "-", "-"
+        elif not rated:
+            estimate_str, interval_str = "Not rated", "-"
+        else:
+            estimate_str = format_points(estimate["Estimate"])
+            interval_str = f"{format_points(estimate['Low'])} to {format_points(estimate['High'])}"
+
         allegation_counts = steward_df["Allegation"].value_counts().head(10).reset_index()
         allegation_counts.columns = ["Allegation", "Count"]
         
@@ -436,19 +431,26 @@ def register_callbacks(app):
             margin=dict(l=20, r=20, t=50, b=20),
         )
         
-        team_tests = cached_team_distribution_tests(json.dumps(filters or {}, sort_keys=True))
-        stats_summary = create_steward_stats_summary(steward, steward_df, filtered, team_tests)
+        stats_summary = create_steward_stats_summary(
+            estimate, rated, len(severity), team_tests.get(steward), len(team_tests),
+            sorted(steward_df["Race"].dropna().unique()),
+        )
+        team_fig = steward_team_chart(
+            team_breakdown(discretionary(steward_df)),
+            steward,
+            estimate["Estimate"] if rated else None,
+        )
         table = create_steward_penalty_table(steward_df)
-        
+
         return (
-            str(panels),
-            str(total),
-            f"{avg_pp:.2f}",
-            diff_str,
-            steward_team_driver_breakdown(filtered, steward),
+            str(events),
+            str(len(steward_df)),
+            estimate_str,
+            interval_str,
+            steward_team_driver_breakdown(scored, steward),
             allegation_fig,
-            steward_statistical_comparison(filtered, steward),
-            steward_team_bias_analysis(filtered, steward),
+            steward_severity_chart(severity, highlight=steward),
+            team_fig,
             stats_summary,
             table,
         )
@@ -553,104 +555,96 @@ def register_callbacks(app):
         return dcc.send_data_frame(df[columns].to_csv, "f1_penalties.csv", index=False)
 
 
-@lru_cache(maxsize=32)
-def cached_team_distribution_tests(filters_key):
-    df = load_data()
-    filtered = filter_data(df, json.loads(filters_key))
-    return team_distribution_tests(filtered)
+SEVERITY_BADGE_COLORS = {
+    "Harsher than expected": "danger",
+    "More lenient than expected": "info",
+    "Within expected range": "secondary",
+    "Not rated": "light",
+}
 
 
-def calculate_all_steward_stats(df):
-    all_stewards = set()
-    for sl in df["Stewards_List"]:
-        all_stewards.update(sl)
-
-    stats_list = []
-    for s in all_stewards:
-        s_df = df[df["Stewards_List"].apply(lambda x: s in x)]
-        if len(s_df) >= MIN_STEWARD_RECORDS:
-            pp_sum = s_df["Penalty Points"].sum()
-            avg_pp = pp_sum / len(s_df) if len(s_df) > 0 else 0
-            stats_list.append({
-                "Steward": s,
-                "Count": len(s_df),
-                "Avg_PP": avg_pp,
-                "Total_PP": pp_sum,
-            })
-    
-    return pd.DataFrame(stats_list) if stats_list else pd.DataFrame()
+def format_points(value):
+    return f"{value:+.2f}"
 
 
-def create_steward_stats_summary(steward_name, steward_df, all_df, team_tests):
-    if steward_df.empty:
-        return html.P("No data available.", className="text-muted")
-    
-    all_stats = calculate_all_steward_stats(all_df)
-    if all_stats.empty:
-        return html.P("Not enough data for comparison.", className="text-muted")
-    
-    steward_row = all_stats[all_stats["Steward"] == steward_name]
-    if steward_row.empty:
-        return html.P("Not enough data for this steward.", className="text-muted")
-    
-    steward_avg_pp = steward_row["Avg_PP"].values[0]
-    overall_avg = all_stats["Avg_PP"].mean()
-    overall_std = all_stats["Avg_PP"].std()
-    z_score = (steward_avg_pp - overall_avg) / overall_std if overall_std > 0 else 0
-    
-    team_test = team_tests.get(steward_name)
-    if team_test is not None:
-        q_value = team_test["q_value"]
-        team_test_str = (
-            f"Chi-square: {team_test['statistic']:.2f}, "
-            f"Monte Carlo p: {team_test['p_value']:.4f}, "
-            f"FDR-adjusted q: {q_value:.4f} (across {len(team_tests)} stewards)"
+def plural(count, noun):
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
+def steward_estimate(scored, severity, steward):
+    row = severity[severity["Steward"] == steward]
+    if not row.empty:
+        return row.iloc[0].to_dict(), True
+    judged = discretionary(scored)
+    events = steward_records(judged, steward)["Event"].unique()
+    if len(events) == 0:
+        return None, False
+    return events_estimate(event_totals(judged), events), False
+
+
+def create_steward_stats_summary(estimate, rated, rated_count, team_test, tested_count, races):
+    if estimate is None:
+        return html.P("No discretionary decisions with the current filters.", className="text-muted")
+
+    single_race_note = []
+    if len(races) == 1 and estimate["Events"] > 1:
+        single_race_note = [html.P(
+            f"Every event this steward worked was the {races[0]} race, so this result cannot be "
+            f"separated from that circuit.",
+            className="small mb-3",
+        )]
+
+    sample = f"{plural(estimate['Events'], 'event')} and {plural(estimate['Decisions'], 'discretionary decision')}"
+    if rated:
+        severity_label = estimate["Label"]
+        severity_text = (
+            f"{format_points(estimate['Estimate'])} penalty points per decision compared with the typical "
+            f"outcome for the same offence in the same season (95% interval "
+            f"{format_points(estimate['Low'])} to {format_points(estimate['High'])}), across {sample}. "
+            f"Adjusted q = {estimate['q_value']:.3f} after correcting for {rated_count} rated stewards."
         )
     else:
-        q_value = 1.0
-        team_test_str = "Chi-square: N/A"
+        severity_label = "Not rated"
+        severity_text = (
+            f"Only {sample} with the current filters. Stewards need at least {MIN_STEWARD_EVENTS} events "
+            "to be rated, because a handful of events cannot separate a real difference from chance."
+        )
 
-    severity_label = "Average"
-    severity_color = "secondary"
-    if z_score > 1.5:
-        severity_label = "Notably Harsh"
-        severity_color = "danger"
-    elif z_score > 0.5:
-        severity_label = "Slightly Harsh"
-        severity_color = "warning"
-    elif z_score < -1.5:
-        severity_label = "Notably Lenient"
-        severity_color = "success"
-    elif z_score < -0.5:
-        severity_label = "Slightly Lenient"
-        severity_color = "info"
-    
-    bias_label = "Within Expected Range"
-    bias_color = "secondary"
-    if q_value < 0.01:
-        bias_label = "Significantly Unusual"
-        bias_color = "danger"
-    elif q_value < 0.05:
-        bias_label = "Unusual Team Distribution"
-        bias_color = "warning"
-    
+    if team_test is None:
+        team_label, team_color = "Not tested", "light"
+        team_text = (
+            f"Needs at least {MIN_STEWARD_EVENTS} events with discretionary decisions "
+            "involving two or more teams."
+        )
+    else:
+        flagged = team_test["q_value"] < FALSE_DISCOVERY_RATE
+        team_label = "Flagged for review" if flagged else "No significant pattern"
+        team_color = "warning" if flagged else "secondary"
+        team_text = (
+            f"Permutation p = {team_test['p_value']:.3f}, adjusted q = {team_test['q_value']:.3f} "
+            f"across {tested_count} tested stewards ({team_test['teams']} teams, "
+            f"{team_test['decisions']} decisions)."
+        )
+
     return dbc.Card([
         dbc.CardHeader("Statistical Summary"),
         dbc.CardBody([
             html.H6("Penalty Severity"),
-            dbc.Badge(severity_label, color=severity_color, className="mb-2 me-2"),
-            html.P(f"Z-score: {z_score:.2f} (vs. all stewards)", className="small text-muted mb-3"),
-            
-            html.H6("Team Distribution Analysis"),
-            dbc.Badge(bias_label, color=bias_color, className="mb-2 me-2"),
-            html.P(team_test_str, className="small text-muted mb-3"),
-            
-            html.H6("Interpretation"),
+            dbc.Badge(severity_label, color=SEVERITY_BADGE_COLORS[severity_label], text_color="dark" if severity_label == "Not rated" else None, className="mb-2 me-2"),
+            html.P(severity_text, className="small text-muted mb-3"),
+            *single_race_note,
+
+            html.H6("Consistency Across Teams"),
+            dbc.Badge(team_label, color=team_color, text_color="dark" if team_color == "light" else None, className="mb-2 me-2"),
+            html.P(team_text, className="small text-muted mb-3"),
+
+            html.H6("Reading These Results"),
             html.P(
-                f"This steward's average penalty points per incident ({steward_avg_pp:.2f}) "
-                f"is {abs(z_score):.1f} standard deviations "
-                f"{'above' if z_score > 0 else 'below'} the mean ({overall_avg:.2f}).",
-                className="small"
+                "Every steward on a panel shares every decision made at that event, so these figures describe "
+                "the events this steward worked rather than their individual votes. A flag marks a pattern worth "
+                "a closer look, not proof of bias, and with the number of decisions available only large, "
+                "consistent differences can be detected.",
+                className="small mb-0",
             ),
         ])
     ])

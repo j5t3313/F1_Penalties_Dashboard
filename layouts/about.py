@@ -30,6 +30,16 @@ def create_layout():
                     "Points expire exactly one year from the date of the incident."
                 ]),
 
+                html.H5("Steward Statistics", className="mt-4"),
+                html.P([
+                    "Each event has a single panel, so steward figures describe the events a steward worked rather than ",
+                    "their individual votes. Severity compares the penalty points given with the typical points for the ",
+                    "same offence in the same season, using only offence types where points are ever awarded. ",
+                    "Uncertainty comes from resampling whole events, stewards with fewer than five events are not rated, ",
+                    "and all flags are corrected for testing many stewards at once. A flag marks a pattern worth a closer ",
+                    "look, not proof of bias. The Stewards page explains each step in more detail."
+                ]),
+
                 html.H5("Contact", className="mt-4"),
                 html.P([
                     "This is a personal project by Jessica Steele. ",
