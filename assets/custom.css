@@ -43,9 +43,69 @@
     .dash-table-container {
         font-size: 12px;
     }
-    
+
     .dash-table-container .dash-header {
         font-size: 11px;
+    }
+
+    .container-fluid {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .navbar-brand {
+        font-size: 1.05rem !important;
+    }
+
+    h4 {
+        font-size: 1.2rem;
+    }
+
+    h5 {
+        font-size: 1.05rem;
+    }
+
+    .card-body {
+        padding: 0.75rem;
+    }
+
+    .card-body h6 {
+        font-size: 0.7rem;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .card-body h3 {
+        font-size: 1.05rem;
+        overflow-wrap: anywhere;
+    }
+
+    #filter-button {
+        margin-bottom: 0.5rem !important;
+    }
+
+    .js-plotly-plot .gtitle {
+        font-size: 13px !important;
+    }
+
+    .js-plotly-plot .xtick text,
+    .js-plotly-plot .ytick text,
+    .js-plotly-plot .legendtext {
+        font-size: 10px !important;
+    }
+
+    .dash-table-container .dash-spreadsheet-container td,
+    .dash-table-container .dash-spreadsheet-container th {
+        padding: 4px 6px !important;
+        font-size: 12px !important;
+    }
+
+    .table-responsive .table {
+        font-size: 12px;
+    }
+
+    .table-responsive .table td,
+    .table-responsive .table th {
+        white-space: nowrap;
     }
 }
 

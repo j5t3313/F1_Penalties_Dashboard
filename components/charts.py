@@ -8,9 +8,9 @@ from components.colors import (
     adjust_color_brightness, TEAM_COLORS, DEFAULT_COLOR
 )
 from data.steward_stats import MIN_STEWARD_RECORDS, expected_team_counts
+from components.theme import CHART_TEMPLATE
 
 
-CHART_TEMPLATE = "plotly_white"
 COLOR_SEQUENCE = px.colors.qualitative.Set2
 BORDER_STYLE = dict(showline=True, linewidth=1.5, linecolor="#333333", mirror=True)
 

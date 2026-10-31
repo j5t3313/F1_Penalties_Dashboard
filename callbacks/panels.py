@@ -15,9 +15,9 @@ from data.panels import (
     get_panel_allegation_breakdown,
     get_panel_outcome_breakdown,
 )
+from components.theme import CHART_TEMPLATE
 
 
-CHART_TEMPLATE = "plotly_white"
 COLOR_SEQUENCE = px.colors.qualitative.Set2
 BORDER_STYLE = dict(showline=True, linewidth=1.5, linecolor="#333333", mirror=True)
 

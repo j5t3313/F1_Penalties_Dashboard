@@ -7,6 +7,21 @@ from data.race_calendar import get_next_race
 from components.colors import get_team_color
 
 
+OUTSTANDING_FILTER_COLUMNS = {
+    "drivers": "Driver",
+    "teams": "Issued_Team",
+    "races": "Issuing_Race",
+    "allegations": "Allegation",
+}
+
+
+def filter_outstanding(outstanding, filters):
+    for key, column in OUTSTANDING_FILTER_COLUMNS.items():
+        if filters.get(key) and column in outstanding.columns:
+            outstanding = outstanding[outstanding[column].isin(filters[key])]
+    return outstanding
+
+
 def create_outstanding_section():
     return html.Div([
         html.Hr(),
@@ -19,8 +34,10 @@ def create_outstanding_section():
     ])
 
 
-def create_outstanding_table():
+def create_outstanding_table(filters=None):
     outstanding = get_outstanding_summary()
+    if not outstanding.empty:
+        outstanding = filter_outstanding(outstanding, filters or {})
     if outstanding.empty:
         return html.P("No outstanding penalties.", className="text-muted")
 
@@ -67,8 +84,9 @@ def register_outstanding_callbacks(app):
     @app.callback(
         Output("cs-outstanding-table", "children"),
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_outstanding_table(pathname):
+    def update_outstanding_table(pathname, filters):
         if pathname not in ["/", "/current-season"]:
             return html.Div()
-        return create_outstanding_table()
+        return create_outstanding_table(filters)

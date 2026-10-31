@@ -43,4 +43,11 @@ def create_layout():
                 dcc.Graph(id="chart-outcomes", config={"displayModeBar": False})
             ], xs=12, className="mb-4"),
         ]),
+
+        dbc.Row([
+            dbc.Col([
+                html.H5("Race-by-Race Log", className="mt-2 mb-3"),
+                html.Div(id="overview-race-log"),
+            ], xs=12, className="mb-4"),
+        ]),
     ], fluid=True, className="py-3")

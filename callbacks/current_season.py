@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 from datetime import date
 
-from data.loader import load_data, doc_markdown_link
+from data.loader import load_data, filter_data, doc_markdown_link
 from data.race_calendar import get_current_season_year, get_next_race
 from data.penalty_tracker import (
     calculate_active_penalty_points,
@@ -15,9 +15,9 @@ from data.penalty_tracker import (
     get_team_penalties,
 )
 from components.colors import get_team_color, build_driver_color_map, DEFAULT_COLOR
+from components.theme import CHART_TEMPLATE
 
 
-CHART_TEMPLATE = "plotly_white"
 COLOR_SEQUENCE = px.colors.qualitative.Set2
 BAN_THRESHOLD = 12
 BORDER_STYLE = dict(showline=True, linewidth=1.5, linecolor="#333333", mirror=True)
@@ -205,18 +205,21 @@ def create_expiring_table(df):
     )
 
 
-def create_race_log_table(df, year=None):
-    season_df = get_current_season_penalties(df, year)
-    if season_df.empty:
-        return html.P("No allegations this season.", className="text-muted")
-    display_columns = [
+def create_race_log_table(log_df, include_year=False, empty_message="No allegations this season."):
+    if log_df.empty:
+        return html.P(empty_message, className="text-muted")
+    year_columns = ["Year"] if include_year else []
+    display_columns = year_columns + [
         "Round", "Race", "Session", "Driver", "Team",
         "Allegation", "Outcome", "Penalty Points", "Fine", "Notes",
     ]
-    columns = [col for col in display_columns if col in season_df.columns]
-    season_df = season_df.sort_values(["Round", "Session"], ascending=[False, True])
-    table_df = season_df[columns].copy()
-    table_df["Doc_Link"] = season_df["Doc_URL"].apply(doc_markdown_link)
+    columns = [col for col in display_columns if col in log_df.columns]
+    log_df = log_df.sort_values(
+        year_columns + ["Round", "Session"],
+        ascending=[False] * len(year_columns) + [False, True],
+    )
+    table_df = log_df[columns].copy()
+    table_df["Doc_Link"] = log_df["Doc_URL"].apply(doc_markdown_link)
     return dash_table.DataTable(
         columns=[{"name": col, "id": col} for col in columns]
         + [{"name": "Doc", "id": "Doc_Link", "presentation": "markdown"}],
@@ -252,6 +255,11 @@ def is_current_season_page(pathname):
     return pathname in ["/", "/current-season"]
 
 
+def season_filtered_data(filters):
+    filters = {key: value for key, value in (filters or {}).items() if key != "years"}
+    return filter_data(load_data(), filters)
+
+
 def register_current_season_callbacks(app):
 
     @app.callback(
@@ -275,11 +283,12 @@ def register_current_season_callbacks(app):
             Output("cs-stat-total", "children"),
         ],
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_stats(pathname):
+    def update_stats(pathname, filters):
         if not is_current_season_page(pathname):
             return ["--"] * 4
-        df = load_data()
+        df = season_filtered_data(filters)
         standings = calculate_active_penalty_points(df)
         expiring = get_expiring_soon(df, days=30)
         if standings.empty:
@@ -301,59 +310,65 @@ def register_current_season_callbacks(app):
     @app.callback(
         Output("chart-cs-active-pp", "figure"),
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_active_pp_chart(pathname):
+    def update_active_pp_chart(pathname, filters):
         if not is_current_season_page(pathname):
             return empty_figure()
-        df = load_data()
+        df = season_filtered_data(filters)
         return active_penalty_points_chart(df)
 
     @app.callback(
         Output("cs-expiring-table", "children"),
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_expiring_table(pathname):
+    def update_expiring_table(pathname, filters):
         if not is_current_season_page(pathname):
             return html.Div()
-        df = load_data()
+        df = season_filtered_data(filters)
         return create_expiring_table(df)
 
     @app.callback(
         Output("chart-cs-season-leaderboard", "figure"),
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_season_leaderboard(pathname):
+    def update_season_leaderboard(pathname, filters):
         if not is_current_season_page(pathname):
             return empty_figure()
-        df = load_data()
+        df = season_filtered_data(filters)
         return season_leaderboard_chart(df)
 
     @app.callback(
         Output("chart-cs-team-penalties", "figure"),
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_team_penalties(pathname):
+    def update_team_penalties(pathname, filters):
         if not is_current_season_page(pathname):
             return empty_figure()
-        df = load_data()
+        df = season_filtered_data(filters)
         return team_penalties_chart(df)
 
     @app.callback(
         Output("chart-cs-allegations", "figure"),
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_allegations(pathname):
+    def update_allegations(pathname, filters):
         if not is_current_season_page(pathname):
             return empty_figure()
-        df = load_data()
+        df = season_filtered_data(filters)
         return season_allegations_chart(df)
 
     @app.callback(
         Output("cs-race-log", "children"),
         Input("url", "pathname"),
+        Input("filter-store", "data"),
     )
-    def update_race_log(pathname):
+    def update_race_log(pathname, filters):
         if not is_current_season_page(pathname):
             return html.Div()
-        df = load_data()
-        return create_race_log_table(df)
+        df = season_filtered_data(filters)
+        return create_race_log_table(get_current_season_penalties(df))

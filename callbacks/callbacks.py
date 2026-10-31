@@ -21,6 +21,8 @@ from components.charts import (
     steward_team_bias_analysis,
 )
 from components.colors import get_team_color
+from components.theme import CHART_TEMPLATE
+from callbacks.current_season import create_race_log_table
 from layouts.drivers import create_driver_content
 from layouts.teams import create_team_content
 from layouts.races import create_race_content
@@ -95,6 +97,16 @@ def register_callbacks(app):
         return None, None, None, None, None, None, None, None
     
     @callback(
+        Output("filter-year", "disabled"),
+        Output("filter-year", "placeholder"),
+        Input("url", "pathname"),
+    )
+    def toggle_year_filter(pathname):
+        if pathname in ["/", "/current-season"]:
+            return True, "Current season only"
+        return False, "All years"
+
+    @callback(
         Output("active-filters-display", "children"),
         Input("filter-store", "data"),
     )
@@ -122,6 +134,7 @@ def register_callbacks(app):
         Output("chart-allegations", "figure"),
         Output("chart-penalty-points", "figure"),
         Output("chart-outcomes", "figure"),
+        Output("overview-race-log", "children"),
         Input("filter-store", "data"),
     )
     def update_overview(filters):
@@ -145,6 +158,11 @@ def register_callbacks(app):
             allegation_breakdown(filtered),
             penalty_points_by_driver(filtered),
             outcome_breakdown(filtered),
+            create_race_log_table(
+                filtered,
+                include_year=True,
+                empty_message="No allegations match the current filters.",
+            ),
         )
     
     @callback(
@@ -246,7 +264,7 @@ def register_callbacks(app):
             allegation_counts,
             path=["Allegation"],
             values="Count",
-            template="plotly_white",
+            template=CHART_TEMPLATE,
         )
         allegation_fig.update_layout(
             title=f"{team} - Top Allegations",
@@ -395,7 +413,7 @@ def register_callbacks(app):
             allegation_counts,
             path=["Allegation"],
             values="Count",
-            template="plotly_white",
+            template=CHART_TEMPLATE,
         )
         allegation_fig.update_layout(
             title="Top Allegations",
