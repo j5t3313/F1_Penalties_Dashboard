@@ -329,6 +329,20 @@ def parse_outcomes(outcome_str):
     return [OUTCOME_CANONICAL.get(p.lower(), p) for p in parts]
 
 
+SESSION_ORDER = ["FP1", "FP2", "FP3", "SQ", "S", "Q", "Pre-Race", "R"]
+
+
+def sort_by_weekend(df, year_column=True, ascending=False):
+    order = {session: index for index, session in enumerate(SESSION_ORDER)}
+    columns = (["Year"] if year_column else []) + ["Round"]
+    sorted_df = df.assign(_session_order=df["Session"].map(order).fillna(len(SESSION_ORDER)))
+    sorted_df = sorted_df.sort_values(
+        columns + ["_session_order"],
+        ascending=[ascending] * len(columns) + [True],
+    )
+    return sorted_df.drop(columns="_session_order")
+
+
 def doc_markdown_link(url):
     if pd.isna(url) or not url:
         return ""

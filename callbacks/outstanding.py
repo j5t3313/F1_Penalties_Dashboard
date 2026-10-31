@@ -33,15 +33,10 @@ def create_outstanding_section():
                 html.Div(id="cs-outstanding-table"),
             ], xs=12, className="mb-4"),
         ]),
-    ])
+    ], id="cs-outstanding-section", style={"display": "none"})
 
 
-def create_outstanding_table(filters=None):
-    outstanding = get_outstanding_summary()
-    if not outstanding.empty:
-        outstanding = filter_outstanding(outstanding, filters or {})
-    if outstanding.empty:
-        return html.P("No outstanding penalties.", className="text-muted")
+def create_outstanding_table(outstanding):
 
     columns = [
         {"name": "Driver", "id": "Driver"},
@@ -85,10 +80,17 @@ def register_outstanding_callbacks(app):
 
     @app.callback(
         Output("cs-outstanding-table", "children"),
+        Output("cs-outstanding-section", "style"),
         Input("url", "pathname"),
         Input("filter-store", "data"),
     )
     def update_outstanding_table(pathname, filters):
+        hidden = {"display": "none"}
         if pathname not in ["/", "/current-season"]:
-            return html.Div()
-        return create_outstanding_table(filters)
+            return html.Div(), hidden
+        outstanding = get_outstanding_summary()
+        if not outstanding.empty:
+            outstanding = filter_outstanding(outstanding, filters or {})
+        if outstanding.empty:
+            return html.Div(), hidden
+        return create_outstanding_table(outstanding), {}

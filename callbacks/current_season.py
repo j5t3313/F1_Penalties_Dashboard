@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 from datetime import date
 
-from data.loader import load_data, filter_data, doc_markdown_link
+from data.loader import load_data, filter_data, doc_markdown_link, sort_by_weekend
 from data.race_calendar import get_current_season_year, get_next_race
 from data.penalty_tracker import (
     calculate_active_penalty_points,
@@ -15,41 +15,10 @@ from data.penalty_tracker import (
     get_team_penalties,
 )
 from components.colors import get_team_color, build_driver_color_map, DEFAULT_COLOR
-from components.theme import CHART_TEMPLATE
+from components.theme import CHART_TEMPLATE, COLOR_SEQUENCE, apply_border, empty_figure
 
 
-COLOR_SEQUENCE = px.colors.qualitative.Set2
 BAN_THRESHOLD = 12
-BORDER_STYLE = dict(showline=True, linewidth=1.5, linecolor="#333333", mirror=True)
-
-
-def _apply_border(fig, is_treemap=False):
-    if is_treemap:
-        fig.add_shape(
-            type="rect", xref="paper", yref="paper",
-            x0=0, y0=0, x1=1, y1=1,
-            line=dict(color="#333333", width=1.5),
-        )
-    else:
-        fig.update_xaxes(**BORDER_STYLE)
-        fig.update_yaxes(**BORDER_STYLE)
-    return fig
-
-
-def empty_figure(message="No data available"):
-    fig = go.Figure()
-    fig.add_annotation(
-        text=message,
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=16, color="gray"),
-    )
-    fig.update_layout(
-        template=CHART_TEMPLATE,
-        xaxis=dict(visible=False), yaxis=dict(visible=False),
-        margin=dict(l=20, r=20, t=40, b=20),
-    )
-    return fig
 
 
 def active_penalty_points_chart(df):
@@ -79,7 +48,7 @@ def active_penalty_points_chart(df):
         height=max(400, len(standings) * 35),
         xaxis=dict(range=[0, max(standings["Active_Points"].max() + 2, BAN_THRESHOLD + 1)]),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -102,7 +71,7 @@ def season_leaderboard_chart(df, year=None):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -125,7 +94,7 @@ def team_penalties_chart(df, year=None):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -147,7 +116,7 @@ def season_allegations_chart(df, year=None):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
-    _apply_border(fig, is_treemap=True)
+    apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -214,10 +183,7 @@ def create_race_log_table(log_df, include_year=False, empty_message="No allegati
         "Allegation", "Outcome", "Penalty Points", "Fine", "Notes",
     ]
     columns = [col for col in display_columns if col in log_df.columns]
-    log_df = log_df.sort_values(
-        year_columns + ["Round", "Session"],
-        ascending=[False] * len(year_columns) + [False, True],
-    )
+    log_df = sort_by_weekend(log_df, year_column=include_year)
     table_df = log_df[columns].copy()
     table_df["Doc_Link"] = log_df["Doc_URL"].apply(doc_markdown_link)
     return dash_table.DataTable(

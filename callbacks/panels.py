@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 
-from data.loader import load_data, filter_data, get_unique_stewards
+from data.loader import load_data, filter_data, get_unique_stewards, sort_by_weekend
 from data.panels import (
     find_panel_matches,
     get_exact_matches,
@@ -15,40 +15,7 @@ from data.panels import (
     get_panel_allegation_breakdown,
     get_panel_outcome_breakdown,
 )
-from components.theme import CHART_TEMPLATE
-
-
-COLOR_SEQUENCE = px.colors.qualitative.Set2
-BORDER_STYLE = dict(showline=True, linewidth=1.5, linecolor="#333333", mirror=True)
-
-
-def _apply_border(fig, is_treemap=False):
-    if is_treemap:
-        fig.add_shape(
-            type="rect", xref="paper", yref="paper",
-            x0=0, y0=0, x1=1, y1=1,
-            line=dict(color="#333333", width=1.5),
-        )
-    else:
-        fig.update_xaxes(**BORDER_STYLE)
-        fig.update_yaxes(**BORDER_STYLE)
-    return fig
-
-
-def empty_figure(message="No data available"):
-    fig = go.Figure()
-    fig.add_annotation(
-        text=message,
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=16, color="gray"),
-    )
-    fig.update_layout(
-        template=CHART_TEMPLATE,
-        xaxis=dict(visible=False), yaxis=dict(visible=False),
-        margin=dict(l=20, r=20, t=40, b=20),
-    )
-    return fig
+from components.theme import CHART_TEMPLATE, COLOR_SEQUENCE, apply_border, empty_figure
 
 
 def create_panel_lookup_section(stewards):
@@ -177,7 +144,7 @@ def panel_co_occurrence_chart(co_matrix):
         margin=dict(l=20, r=40, t=50, b=20),
         height=max(300, len(co_matrix) * 35),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -209,7 +176,7 @@ def panel_comparison_chart(individual_df, panel_stats):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -230,7 +197,7 @@ def panel_allegations_chart(matches_df):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
-    _apply_border(fig, is_treemap=True)
+    apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -256,7 +223,7 @@ def panel_outcomes_chart(matches_df):
         margin=dict(l=20, r=20, t=50, b=20),
         height=max(300, len(outcomes) * 25),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -304,10 +271,9 @@ def create_panel_penalty_table(matches_df):
         "Allegation", "Outcome", "Penalty Points", "Fine", "Notes",
     ]
     display_cols = [c for c in cols if c in matches_df.columns]
-    display_df = matches_df[display_cols].copy()
-    display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
+    display_df = sort_by_weekend(matches_df)[display_cols]
 
-    return dbc.Table.from_dataframe(
+    table = dbc.Table.from_dataframe(
         display_df.head(50),
         striped=True,
         bordered=True,
@@ -315,6 +281,15 @@ def create_panel_penalty_table(matches_df):
         responsive=True,
         size="sm",
     )
+    if len(display_df) <= 50:
+        return table
+    return html.Div([
+        table,
+        html.P(
+            f"Showing the 50 most recent of {len(display_df)} penalties.",
+            className="text-muted small",
+        ),
+    ])
 
 
 def register_panel_callbacks(app):

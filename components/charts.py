@@ -8,44 +8,7 @@ from components.colors import (
     adjust_color_brightness, TEAM_COLORS, DEFAULT_COLOR
 )
 from data.steward_stats import MIN_STEWARD_RECORDS, expected_team_counts
-from components.theme import CHART_TEMPLATE
-
-
-COLOR_SEQUENCE = px.colors.qualitative.Set2
-BORDER_STYLE = dict(showline=True, linewidth=1.5, linecolor="#333333", mirror=True)
-
-
-def _apply_border(fig, is_treemap=False):
-    if is_treemap:
-        fig.add_shape(
-            type="rect", xref="paper", yref="paper",
-            x0=0, y0=0, x1=1, y1=1,
-            line=dict(color="#333333", width=1.5),
-        )
-    else:
-        fig.update_xaxes(**BORDER_STYLE)
-        fig.update_yaxes(**BORDER_STYLE)
-    return fig
-
-
-def empty_figure(message="No data available"):
-    fig = go.Figure()
-    fig.add_annotation(
-        text=message,
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
-        showarrow=False,
-        font=dict(size=16, color="gray"),
-    )
-    fig.update_layout(
-        template=CHART_TEMPLATE,
-        xaxis=dict(visible=False),
-        yaxis=dict(visible=False),
-        margin=dict(l=20, r=20, t=40, b=20),
-    )
-    return fig
+from components.theme import CHART_TEMPLATE, COLOR_SEQUENCE, apply_border, empty_figure
 
 
 def penalties_by_year(df):
@@ -68,7 +31,7 @@ def penalties_by_year(df):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_xaxes(dtick=1)
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -96,7 +59,7 @@ def top_drivers(df, n=10):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -123,7 +86,7 @@ def top_teams(df, n=10):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -146,7 +109,7 @@ def allegation_breakdown(df, n=10):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
-    _apply_border(fig, is_treemap=True)
+    apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -180,7 +143,7 @@ def outcome_breakdown(df):
         margin=dict(l=20, r=20, t=50, b=20),
         height=max(400, len(outcome_df) * 25),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -209,7 +172,7 @@ def penalty_points_by_driver(df, n=12):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -248,7 +211,7 @@ def driver_timeline(df, driver_name):
         xaxis=dict(dtick=1, tickformat="d"),
         legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -272,7 +235,7 @@ def driver_allegation_breakdown(df, driver_name):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_traces(textinfo="label+value")
-    _apply_border(fig, is_treemap=True)
+    apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -312,7 +275,7 @@ def driver_cumulative_points(df, driver_name):
         margin=dict(l=20, r=20, t=50, b=20),
         xaxis=dict(dtick=1, tickformat="d"),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -343,7 +306,7 @@ def team_drivers_breakdown(df, team_name):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -370,7 +333,7 @@ def team_yearly_trend(df, team_name):
         margin=dict(l=20, r=20, t=50, b=20),
     )
     fig.update_xaxes(dtick=1)
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -396,7 +359,7 @@ def race_summary(df, year, race):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -426,7 +389,7 @@ def steward_penalties_issued(df, n=15):
         yaxis_title="",
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -469,7 +432,7 @@ def steward_avg_penalty_points(df, min_penalties=MIN_STEWARD_RECORDS):
         yaxis_title="",
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -509,7 +472,7 @@ def comparison_bar(df, entity_col, entities, metric="count"):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -549,7 +512,7 @@ def comparison_allegation(df, entity_col, entities):
         margin=dict(l=20, r=20, t=50, b=80),
         height=max(400, n_allegations * (10 * n_entities + 12)),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -588,7 +551,7 @@ def comparison_yearly_trend(df, entity_col, entities):
 
     )
     fig.update_xaxes(dtick=1)
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -627,7 +590,7 @@ def driver_incidents_with(df, driver_name, n=15):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -656,7 +619,7 @@ def driver_involved_in_others(df, driver_name):
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -683,7 +646,7 @@ def race_penalties_by_year(df, race_name):
         margin=dict(l=20, r=20, t=50, b=20),
         showlegend=False,
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -718,7 +681,7 @@ def race_drivers_by_year(df, race_name):
         legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
         barmode="stack",
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -744,7 +707,7 @@ def race_allegations_by_year(df, race_name):
         title=f"{race_name} - Allegations Breakdown",
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig, is_treemap=True)
+    apply_border(fig, is_treemap=True)
     return fig
 
 
@@ -783,7 +746,7 @@ def steward_team_driver_breakdown(df, steward_name):
         legend=dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5),
         height=max(400, len(team_order) * 35),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -849,7 +812,7 @@ def steward_statistical_comparison(df, steward_name):
         margin=dict(l=20, r=20, t=50, b=20),
         height=max(400, len(stats_df) * 25),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig
 
 
@@ -884,11 +847,11 @@ def steward_team_bias_analysis(df, steward_name):
     fig.add_vline(x=0, line_color="black", line_width=1)
     
     fig.update_layout(
-        title=f"{steward_name} - Team Distribution vs Season-Adjusted Expectation (%)",
+        title=f"{steward_name} - Teams vs Expected (%)",
         xaxis_title="% Difference from Expected",
         yaxis_title="",
         template=CHART_TEMPLATE,
         margin=dict(l=20, r=20, t=50, b=20),
     )
-    _apply_border(fig)
+    apply_border(fig)
     return fig

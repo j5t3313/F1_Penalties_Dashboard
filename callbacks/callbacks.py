@@ -5,7 +5,7 @@ import numpy as np
 import json
 from functools import lru_cache
 
-from data.loader import load_data, filter_data, get_unique_values, get_unique_stewards
+from data.loader import load_data, filter_data, get_unique_values, get_unique_stewards, sort_by_weekend
 from data.steward_stats import MIN_STEWARD_RECORDS, team_distribution_tests
 from components.filters import format_active_filters
 from components.charts import (
@@ -109,12 +109,16 @@ def register_callbacks(app):
     @callback(
         Output("filter-year", "disabled"),
         Output("filter-year", "placeholder"),
+        Output("filter-race", "disabled"),
+        Output("filter-race", "placeholder"),
         Input("url", "pathname"),
     )
-    def toggle_year_filter(pathname):
+    def toggle_page_filters(pathname):
         if pathname in ["/", "/current-season"]:
-            return True, "Current season only"
-        return False, "All years"
+            return True, "Current season only", False, "All races"
+        if pathname == "/races":
+            return True, "Set on this page", True, "Set on this page"
+        return False, "All years", False, "All races"
 
     @callback(
         Output("active-filters-display", "children"),
@@ -315,14 +319,16 @@ def register_callbacks(app):
         Output("race-penalty-table", "children"),
         Input("race-select", "value"),
         Input("race-year-select", "value"),
+        Input("filter-store", "data"),
     )
-    def update_race_stats(race, year):
+    def update_race_stats(race, year, filters):
         if not race:
             empty = empty_figure("Select a race")
             return "0", "0", "0", "€0", empty, empty, empty, None
-        
-        df = load_data()
-        
+
+        page_filters = {key: value for key, value in (filters or {}).items() if key not in ("years", "races")}
+        df = filter_data(load_data(), page_filters)
+
         if year:
             race_df = df[(df["Year"] == year) & (df["Race"] == race)]
         else:
@@ -656,87 +662,56 @@ def doc_anchor(url):
     return html.A("PDF", href=url, target="_blank", rel="noopener")
 
 
-def create_driver_penalty_table(df):
+def create_penalty_table(df, cols, limit=50):
     if df.empty:
         return html.P("No penalties found.", className="text-muted")
 
-    cols = ["Year", "Round", "Race", "Session", "Allegation", "Allegation_Raw",
-            "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points", "Notes"]
+    df = sort_by_weekend(df)
     display_cols = [c for c in cols if c in df.columns]
     display_df = df[display_cols].copy()
     display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
-    display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
-    
-    return dbc.Table.from_dataframe(
-        display_df.head(50),
+
+    table = dbc.Table.from_dataframe(
+        display_df.head(limit),
         striped=True,
         bordered=True,
         hover=True,
         responsive=True,
         size="sm",
     )
+    if len(display_df) <= limit:
+        return table
+    return html.Div([
+        table,
+        html.P(
+            f"Showing the {limit} most recent of {len(display_df)} penalties. "
+            "Use the Data page to see them all.",
+            className="text-muted small",
+        ),
+    ])
+
+
+def create_driver_penalty_table(df):
+    cols = ["Year", "Round", "Race", "Session", "Allegation", "Allegation_Raw",
+            "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points", "Notes"]
+    return create_penalty_table(df, cols)
 
 
 def create_team_penalty_table(df):
-    if df.empty:
-        return html.P("No penalties found.", className="text-muted")
-    
-    cols = ["Year", "Round", "Race", "Driver", "Session", "Allegation", 
+    cols = ["Year", "Round", "Race", "Driver", "Session", "Allegation",
             "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", "Penalty Points"]
-    display_cols = [c for c in cols if c in df.columns]
-    display_df = df[display_cols].copy()
-    display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
-    display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
-    
-    return dbc.Table.from_dataframe(
-        display_df.head(50),
-        striped=True,
-        bordered=True,
-        hover=True,
-        responsive=True,
-        size="sm",
-    )
+    return create_penalty_table(df, cols)
 
 
 def create_race_penalty_table(df):
-    if df.empty:
-        return html.P("No penalties found.", className="text-muted")
-    
     cols = ["Year", "Round", "Driver", "Team", "Session", "Allegation", "Allegation_Raw",
-            "Incident involving", "Outcome", "Time Penalty (in seconds)", "Fine", 
+            "Incident involving", "Outcome", "Time Penalty (in seconds)", "Fine",
             "Grid Penalty", "Penalty Points", "Notes", "Stewards"]
-    display_cols = [c for c in cols if c in df.columns]
-    display_df = df[display_cols].copy()
-    display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
-    display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
-    
-    return dbc.Table.from_dataframe(
-        display_df.head(100),
-        striped=True,
-        bordered=True,
-        hover=True,
-        responsive=True,
-        size="sm",
-    )
+    return create_penalty_table(df, cols, limit=100)
 
 
 def create_steward_penalty_table(df):
-    if df.empty:
-        return html.P("No penalties found.", className="text-muted")
-    
     cols = ["Year", "Round", "Race", "Driver", "Team", "Session", "Allegation",
-            "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty", 
+            "Outcome", "Time Penalty (in seconds)", "Fine", "Grid Penalty",
             "Penalty Points", "Notes"]
-    display_cols = [c for c in cols if c in df.columns]
-    display_df = df[display_cols].copy()
-    display_df["Doc"] = df["Doc_URL"].apply(doc_anchor)
-    display_df = display_df.sort_values(["Year", "Round"], ascending=[False, False])
-    
-    return dbc.Table.from_dataframe(
-        display_df.head(50),
-        striped=True,
-        bordered=True,
-        hover=True,
-        responsive=True,
-        size="sm",
-    )
+    return create_penalty_table(df, cols)
