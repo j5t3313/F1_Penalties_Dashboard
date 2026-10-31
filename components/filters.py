@@ -89,6 +89,34 @@ def create_filter_offcanvas(years, races, sessions, drivers, teams, allegations,
                 multi=True,
                 placeholder="All stewards",
             ),
+
+            html.Hr(),
+
+            html.H6("Exclude", className="text-muted"),
+
+            dbc.Label("Exclude Session"),
+            dcc.Dropdown(
+                id="filter-exclude-session",
+                options=[{"label": s, "value": s} for s in sessions],
+                multi=True,
+                placeholder="None",
+            ),
+
+            dbc.Label("Exclude Allegation", className="mt-3"),
+            dcc.Dropdown(
+                id="filter-exclude-allegation",
+                options=[{"label": a, "value": a} for a in allegations],
+                multi=True,
+                placeholder="None",
+            ),
+
+            dbc.Label("Exclude Outcome", className="mt-3"),
+            dcc.Dropdown(
+                id="filter-exclude-outcome",
+                options=[{"label": o, "value": o} for o in outcomes],
+                multi=True,
+                placeholder="None",
+            ),
         ],
         id="filter-offcanvas",
         title="Filters",
@@ -117,7 +145,12 @@ def format_active_filters(filters):
         "outcomes": "Outcome",
         "stewards": "Steward",
     }
-    
+    exclude_names = {
+        "exclude_sessions": "Session",
+        "exclude_allegations": "Allegation",
+        "exclude_outcomes": "Outcome",
+    }
+
     for key, label in filter_names.items():
         if filters.get(key):
             for value in filters[key]:
@@ -125,6 +158,17 @@ def format_active_filters(filters):
                     dbc.Badge(
                         f"{label}: {value}",
                         color="primary",
+                        className="me-1 mb-1",
+                    )
+                )
+
+    for key, label in exclude_names.items():
+        if filters.get(key):
+            for value in filters[key]:
+                badges.append(
+                    dbc.Badge(
+                        f"Not {label}: {value}",
+                        color="danger",
                         className="me-1 mb-1",
                     )
                 )

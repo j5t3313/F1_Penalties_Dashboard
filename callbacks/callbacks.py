@@ -64,10 +64,14 @@ def register_callbacks(app):
         Input("filter-allegation", "value"),
         Input("filter-outcome", "value"),
         Input("filter-steward", "value"),
+        Input("filter-exclude-session", "value"),
+        Input("filter-exclude-allegation", "value"),
+        Input("filter-exclude-outcome", "value"),
         Input("reset-filters", "n_clicks"),
         prevent_initial_call=True,
     )
-    def update_filter_store(years, races, sessions, drivers, teams, allegations, outcomes, stewards, reset_clicks):
+    def update_filter_store(years, races, sessions, drivers, teams, allegations, outcomes, stewards,
+                            exclude_sessions, exclude_allegations, exclude_outcomes, reset_clicks):
         if ctx.triggered_id == "reset-filters":
             return {}
         return {
@@ -79,8 +83,11 @@ def register_callbacks(app):
             "allegations": allegations or [],
             "outcomes": outcomes or [],
             "stewards": stewards or [],
+            "exclude_sessions": exclude_sessions or [],
+            "exclude_allegations": exclude_allegations or [],
+            "exclude_outcomes": exclude_outcomes or [],
         }
-    
+
     @callback(
         Output("filter-year", "value"),
         Output("filter-race", "value"),
@@ -90,11 +97,14 @@ def register_callbacks(app):
         Output("filter-allegation", "value"),
         Output("filter-outcome", "value"),
         Output("filter-steward", "value"),
+        Output("filter-exclude-session", "value"),
+        Output("filter-exclude-allegation", "value"),
+        Output("filter-exclude-outcome", "value"),
         Input("reset-filters", "n_clicks"),
         prevent_initial_call=True,
     )
     def reset_filters(n_clicks):
-        return None, None, None, None, None, None, None, None
+        return (None,) * 11
     
     @callback(
         Output("filter-year", "disabled"),

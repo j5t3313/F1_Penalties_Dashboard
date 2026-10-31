@@ -398,5 +398,17 @@ def filter_data(df, filters):
             lambda x: any(s in x for s in filters["stewards"])
         )
         filtered = filtered[mask]
-    
+
+    if filters.get("exclude_sessions"):
+        filtered = filtered[~filtered["Session"].isin(filters["exclude_sessions"])]
+
+    if filters.get("exclude_allegations"):
+        filtered = filtered[~filtered["Allegation"].isin(filters["exclude_allegations"])]
+
+    if filters.get("exclude_outcomes"):
+        mask = filtered["Outcome_List"].apply(
+            lambda x: any(o in x for o in filters["exclude_outcomes"])
+        )
+        filtered = filtered[~mask]
+
     return filtered

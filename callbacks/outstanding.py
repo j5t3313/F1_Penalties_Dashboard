@@ -19,6 +19,8 @@ def filter_outstanding(outstanding, filters):
     for key, column in OUTSTANDING_FILTER_COLUMNS.items():
         if filters.get(key) and column in outstanding.columns:
             outstanding = outstanding[outstanding[column].isin(filters[key])]
+    if filters.get("exclude_allegations"):
+        outstanding = outstanding[~outstanding["Allegation"].isin(filters["exclude_allegations"])]
     return outstanding
 
 
